@@ -37,7 +37,16 @@ let SITES: [Site] = [
         Preset(label: "Suggested", css: """
         div:has(> div > span:is([title="Suggested for you"])) { display:none !important; }
         """),
-    ], defaultOn: ["Reels", "Explore", "Suggested"]),
+        Preset(label: "Suggested posts in feed", css: """
+        article:has(span:is([title="Suggested for you"])),
+        article:has(span:-webkit-any([title="Suggested for you"])),
+        article:has(> div span:is([title="Suggested for you"])) { display:none !important; }
+        """),
+        Preset(label: "Threads badge", css: """
+        a[href*="threads.net"], a[href*="/threads"], svg[aria-label*="Threads" i],
+        [aria-label*="Threads" i] { display:none !important; }
+        """),
+    ], defaultOn: ["Reels", "Explore", "Suggested", "Suggested posts in feed", "Threads badge"]),
     Site(id: "tiktok", name: "TikTok", url: "https://www.tiktok.com/", presets: [
         Preset(label: "For You feed", css: """
         [data-e2e="nav-foryou"] { display:none !important; }

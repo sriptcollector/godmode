@@ -1,0 +1,10 @@
+{
+  "name": "Discord",
+  "app_store_bundle": "com.hammerandchisel.discord",
+  "bundle_id": "com.orionjones.godmode.discord",
+  "display_name": "Discord GM",
+  "ipa_url": "https://archive.org/download/com.hammerandchisel.discord_320.1_decrypted/com.hammerandchisel.discord_320.1_decrypted.ipa",
+  "tweaks": [],
+  "kit": true,
+  "settings_hint": "3-finger double-tap (or 2-finger hold) anywhere -> Edit layout to hide nav bar tabs live"
+}

@@ -5,7 +5,8 @@
   gm devmode                        reveal/check Developer Mode
   gm apps [-a] [filter]             installed apps (-a includes system apps)
   gm mods                           available mod recipes
-  gm patch instagram --ipa X.ipa    inject tweaks, re-sign, install
+  gm patch instagram [--ipa X.ipa]  inject tweaks, re-sign, install (auto-downloads the IPA)
+  gm patch all                      every social app recipe in mods/
   gm speed instagram 2              set UI speed of a patched app (0.25 … 5)
   gm launch|remove <mod|bundle>     open / uninstall
   gm companion                      build + install the GODMODE phone app
@@ -73,7 +74,20 @@ def cmd_mods(a):
 
 
 def cmd_patch(a):
-    patch.patch(a.mod, os.path.expanduser(a.ipa), dev_id=a.device, speed=a.speed,
+    if a.mod == "all":
+        names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, "mods")) if f.endswith(".json") and f != "selftest.json")
+        failed = []
+        for n in names:
+            print(f"\n=== {n}")
+            try:
+                patch.patch(n, None, dev_id=a.device, speed=a.speed, install=not a.no_install, out_dir=a.keep)
+            except DeviceError as e:
+                print(f"✗ {n}: {str(e).splitlines()[-1]}")
+                failed.append(n)
+        if failed:
+            sys.exit(f"\nfailed: {', '.join(failed)}")
+        return
+    patch.patch(a.mod, os.path.expanduser(a.ipa) if a.ipa else None, dev_id=a.device, speed=a.speed,
                 install=not a.no_install, out_dir=a.keep)
 
 
@@ -121,7 +135,7 @@ def main():
     sub.add_parser("devmode").set_defaults(fn=cmd_devmode)
     s = sub.add_parser("apps"); s.add_argument("-a", "--all", action="store_true"); s.add_argument("filter", nargs="?"); s.set_defaults(fn=cmd_apps)
     sub.add_parser("mods").set_defaults(fn=cmd_mods)
-    s = sub.add_parser("patch"); s.add_argument("mod"); s.add_argument("--ipa", required=True)
+    s = sub.add_parser("patch"); s.add_argument("mod"); s.add_argument("--ipa", help="decrypted .ipa (default: download the recipe's ipa_url)")
     s.add_argument("--speed", type=float, help="bake a default UI speed into the app")
     s.add_argument("--keep", metavar="DIR", help="also save the signed .app here")
     s.add_argument("--no-install", action="store_true"); s.set_defaults(fn=cmd_patch)

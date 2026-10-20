@@ -30,7 +30,7 @@ struct GodModeApp: App {
     }
 }
 
-/// Scales every Core Animation clock in this app — same trick SpeedHack.dylib injects into patched apps.
+/// Scales every Core Animation clock in this app — same trick GodModeKit.dylib injects into patched apps.
 enum UISpeed {
     static func apply(_ speed: Double) {
         for scene in UIApplication.shared.connectedScenes {

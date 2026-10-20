@@ -32,11 +32,13 @@ def fetch(url):
     return dest
 
 
-def speedhack_dylib():
-    dylib = os.path.join(ROOT, "tweaks", "speedhack", "SpeedHack.dylib")
-    src = os.path.join(ROOT, "tweaks", "speedhack", "SpeedHack.m")
+def kit_dylib():
+    """GodModeKit: on-phone menu with tap-to-hide layout editor, UI speed, daily limit."""
+    kit = os.path.join(ROOT, "tweaks", "godmodekit")
+    dylib = os.path.join(kit, "GodModeKit.dylib")
+    src = os.path.join(kit, "GodModeKit.m")
     if not os.path.exists(dylib) or os.path.getmtime(src) > os.path.getmtime(dylib):
-        run([os.path.join(ROOT, "tweaks", "speedhack", "build.sh")])
+        run([os.path.join(kit, "build.sh")])
     return dylib
 
 
@@ -51,15 +53,30 @@ def assert_decrypted(app_dir):
                           "You need a *decrypted* IPA — see README › Getting a decrypted IPA.")
 
 
-def patch(mod_name, ipa, dev_id=None, speed=None, install=True, out_dir=None):
+def fetch_ipa(mod):
+    """Download the recipe's decrypted IPA into ~/godmode-ipas (cached)."""
+    if not mod.get("ipa_url"):
+        raise DeviceError(f"{mod['name']}: no ipa_url in the recipe — pass --ipa")
+    dest_dir = os.path.expanduser("~/godmode-ipas")
+    os.makedirs(dest_dir, exist_ok=True)
+    dest = os.path.join(dest_dir, urllib.request.unquote(mod["ipa_url"].rsplit("/", 1)[-1]))
+    if not os.path.exists(dest):
+        print(f"  ↓ {mod['name']} IPA (this is big)…")
+        urllib.request.urlretrieve(mod["ipa_url"], dest + ".part")
+        os.rename(dest + ".part", dest)
+    return dest
+
+
+def patch(mod_name, ipa=None, dev_id=None, speed=None, install=True, out_dir=None):
     if not shutil.which("cyan"):
         raise DeviceError("cyan missing — pipx install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip")
     mod = load_mod(mod_name)
+    ipa = ipa or fetch_ipa(mod)
     work = tempfile.mkdtemp(prefix=f"gm-{mod_name}-")
     try:
         files = [fetch(t["url"]) for t in mod.get("tweaks", [])]
-        if mod.get("speedhack", True):
-            files.append(speedhack_dylib())
+        if mod.get("kit", True):
+            files.append(kit_dylib())
 
         injected = os.path.join(work, "injected.ipa")
         print(f"• injecting {', '.join(os.path.basename(f) for f in files)}")
@@ -71,6 +88,8 @@ def patch(mod_name, ipa, dev_id=None, speed=None, install=True, out_dir=None):
         assert_decrypted(app_dir)
         if speed:
             sign.set_info(app_dir, GMSpeed=float(speed))
+        if mod.get("defaults"):
+            sign.set_info(app_dir, GMDefaults=mod["defaults"])
 
         dev = device.pick(dev_id)
         udid = dev["hardwareProperties"]["udid"]

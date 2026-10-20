@@ -123,13 +123,13 @@ struct SpeedView: View {
             }
             Panel {
                 Text("PATCHED APPS").font(Theme.mono(11)).foregroundStyle(Theme.dim)
-                Text("Apps patched by gm carry SpeedHack. Three-finger double-tap inside them for a speed picker, or from the Mac:")
+                Text("Every patched app carries GodModeKit. Inside it: three-finger double-tap (or two-finger hold) → UI speed, Edit layout, Daily limit. Works with no computer. From the Mac:")
                     .font(Theme.mono(12))
                 Text("gm speed instagram 2").font(Theme.mono(13, .bold)).foregroundStyle(Theme.acid)
             }
             Panel {
                 Text("SYSTEM-WIDE").font(Theme.mono(11)).foregroundStyle(Theme.dim)
-                Text("iOS has no global animation-scale switch (Android does). Closest thing: Reduce Motion swaps zooms for fast crossfades. Make a Shortcut named \"GM Motion\" with the action Set Reduce Motion → Toggle, then:")
+                Text("iOS 27 has no system-wide animation-speed switch. The old no-jailbreak speed apps used kernel bugs Apple patched in iOS 16/17. Fastest-feeling stock setup: Reduce Motion + Prefer Cross-Fade Transitions. Make a Shortcut named \"GM Motion\" with Set Reduce Motion → Toggle, then:")
                     .font(Theme.mono(12))
                 Button("run GM Motion shortcut") {
                     if let url = URL(string: "shortcuts://run-shortcut?name=GM%20Motion") {
@@ -154,12 +154,15 @@ struct Mod: Identifiable {
 }
 
 let MODS: [Mod] = [
-    Mod(id: "instagram", app: "Instagram", tweak: "SCInsta + SpeedHack",
+    Mod(id: "instagram", app: "Instagram", tweak: "SCInsta + GodModeKit",
         does: ["hide Reels tab", "hide Explore / Create tabs", "reorder tab bar", "no ads, no Meta AI",
                "no suggested posts", "download posts/reels/stories", "keep deleted DMs", "no seen receipts"],
         ready: true),
-    Mod(id: "youtube", app: "YouTube", tweak: "YTLite", does: ["no Shorts tab", "no ads", "background play"], ready: false),
-    Mod(id: "tiktok", app: "TikTok", tweak: "BHTikTok", does: ["no ads", "save w/o watermark", "hide Shop/Live"], ready: false),
+    Mod(id: "youtube", app: "YouTube", tweak: "YTLite + GodModeKit", does: ["no Shorts tab", "no ads", "background play", "downloads"], ready: true),
+    Mod(id: "x", app: "X", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
+    Mod(id: "reddit", app: "Reddit", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
+    Mod(id: "discord", app: "Discord", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
+    Mod(id: "telegram", app: "Telegram", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
 ]
 
 struct ModsView: View {
@@ -180,7 +183,7 @@ struct ModsView: View {
                     Text(m.tweak).font(Theme.mono(11)).foregroundStyle(Theme.dim)
                     ForEach(m.does, id: \.self) { Text("› \($0)").font(Theme.mono(12)) }
                     if m.ready {
-                        Text("gm patch \(m.id) --ipa ~/Downloads/\(m.app).ipa")
+                        Text("gm patch \(m.id)")
                             .font(Theme.mono(11, .bold)).foregroundStyle(Theme.acid)
                             .textSelection(.enabled)
                     }
@@ -193,7 +196,6 @@ struct ModsView: View {
 // MARK: - Ideas
 
 let IDEAS: [(String, String)] = [
-    ("PATCH", "Doom-scroll governor: after N minutes the app greys out and drops to 0.25x"),
     ("PATCH", "FLEX inspector in any app: view tree, live-edit labels, browse its files"),
     ("PATCH", "Boring mode: grayscale + no badges for any addictive app"),
     ("PATCH", "Force dark mode / custom accent / custom font in any app"),

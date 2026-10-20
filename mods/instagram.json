@@ -11,6 +11,15 @@
       "what": "hide reels tab / explore tab / create tab, reorder tab bar, hide ads + Meta AI, no suggested posts, download media, keep deleted DMs, disable seen receipts"
     }
   ],
-  "speedhack": true,
-  "settings_hint": "SCInsta settings live inside Instagram (screenshots: github.com/SoCuul/SCInsta#opening-tweak-settings) -> Navigation -> Hide reels tab"
+  "kit": true,
+  "settings_hint": "Reels tab is hidden by default (restart the app once). More: SCInsta settings inside Instagram. Anything else: 3-finger double-tap -> Edit layout.",
+  "defaults": {
+    "hide_reels_tab": true,
+    "hide_ads": true,
+    "hide_meta_ai": true,
+    "no_suggested_post": true,
+    "no_suggested_reels": true,
+    "no_suggested_account": true
+  },
+  "ipa_url": "https://archive.org/download/com.burbn.instagram-418.2.0-Decrypted/com.burbn.instagram-418.2.0-Decrypted.ipa"
 }

@@ -1,0 +1,10 @@
+{
+  "name": "Reddit",
+  "app_store_bundle": "com.reddit.Reddit",
+  "bundle_id": "com.orionjones.godmode.reddit",
+  "display_name": "Reddit GM",
+  "ipa_url": "https://archive.org/download/com.reddit.Reddit_2025.32.0_decrypted/com.reddit.Reddit_2025.32.0_decrypted.ipa",
+  "tweaks": [],
+  "kit": true,
+  "settings_hint": "3-finger double-tap (or 2-finger hold) anywhere -> Edit layout to hide nav bar tabs live"
+}

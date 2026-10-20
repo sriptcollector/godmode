@@ -1,0 +1,16 @@
+{
+  "name": "YouTube",
+  "app_store_bundle": "com.google.ios.youtube",
+  "bundle_id": "com.orionjones.godmode.youtube",
+  "display_name": "YT GM",
+  "ipa_url": "https://archive.org/download/com.google.ios.youtube_21.41.5_und3fined/com.google.ios.youtube_21.41.5_und3fined.ipa",
+  "tweaks": [
+    {
+      "name": "YTLite",
+      "url": "https://github.com/dayanch96/YTLite/releases/download/v5.2.2/com.dvntm.ytlite_5.2.2_iphoneos-arm64.deb",
+      "what": "no ads, hide Shorts, background play, downloads, hide tab bar items, tons of UI toggles"
+    }
+  ],
+  "kit": true,
+  "settings_hint": "3-finger double-tap (or 2-finger hold) anywhere -> Edit layout to hide nav bar tabs live"
+}

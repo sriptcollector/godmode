@@ -12,7 +12,6 @@ IDEAS = [
     ("PATCH", "TikTok: no ads, download w/o watermark, hide Live/Shop tabs", "BHTikTok tweak"),
     ("PATCH", "Snapchat: hide Spotlight + Discover, keep chats, no screenshot alert", "SCInsta-style dylib; Snapchat detects re-signs, burner account only"),
     ("PATCH", "Reddit/X: kill promoted posts + 'For You', force chronological", "Apollo-style dylib hooking the feed model"),
-    ("PATCH", "Any app: doom-scroll governor — after N minutes the app greys out and slows to 0.25x", "extend SpeedHack with a timer"),
     ("PATCH", "Any app: FLEX in-app inspector — browse its view tree, live-edit labels, read its sandbox files", "inject FLEXing dylib, 3-finger tap to open"),
     ("PATCH", "Any app: grayscale + no-badge 'boring mode' to make an app less addictive", "CIFilter on the key window layer"),
     ("PATCH", "Any app: force dark mode / custom accent color / custom font", "override traitCollection + UIAppearance"),

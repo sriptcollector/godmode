@@ -1,0 +1,10 @@
+{
+  "name": "X",
+  "app_store_bundle": "com.atebits.Tweetie2",
+  "bundle_id": "com.orionjones.godmode.x",
+  "display_name": "X GM",
+  "ipa_url": "https://archive.org/download/com.atebits.tweetie2_xtwitter-11.30.1-decrypted/com.atebits.Tweetie2_X%28twitter%29-11.30.1-decrypted.ipa",
+  "tweaks": [],
+  "kit": true,
+  "settings_hint": "3-finger double-tap (or 2-finger hold) anywhere -> Edit layout to hide nav bar tabs live"
+}

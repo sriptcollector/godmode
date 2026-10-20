@@ -12,6 +12,23 @@ gm gps la                          # fake the phone's GPS (la/nyc/tokyo/… or l
 gm ideas                           # what else to build
 ```
 
+## The in-app UI editor (Edit tab) — the reliable way to kill Reels
+
+The re-signed-IPA mods (SCInsta etc.) are fragile and Meta blocks login on them. So the GODMODE app's
+**Edit** tab runs Instagram (and YouTube / Reddit / X) *inside* the app in a real web session — normal
+login, no re-signing, no computer — and lets you edit its UI live:
+
+- **HIDE… presets**: one tap removes Reels, Explore, Stories, Suggested (YouTube Shorts, Reddit
+  recommendations, X "For You"/Trends). The nav-bar item disappears and the row closes the gap.
+- **EDIT mode**: tap *any* element on the page and it's hidden. A CSS selector is generated for it and
+  saved per site; a MutationObserver re-applies every rule through the site's own SPA navigation and on
+  reload, so hidden things stay hidden.
+- Verified in the iOS Simulator: "Reels" preset removes the Reels tab from Instagram's web nav bar and
+  it stays gone across reloads.
+
+Code: `ios/GodMode/WebEditor.swift` — a `WKWebView` with a persistent data store (login sticks) and an
+injected user script (`window.__gmApply`) that the SwiftUI side feeds the hide-list to.
+
 ## The GODMODE phone app (`gm companion`)
 
 Runs on the phone, no computer needed once installed:

@@ -1,0 +1,89 @@
+{
+  "" : {
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodMode-primary.dia",
+    "emit-module-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodMode-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodMode-primary-emit-module.dia",
+    "pch" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodMode-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodMode-primary.swiftdeps"
+  },
+  "/Users/orion/godmode/ios/GodMode/AIScratchpad.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/AIScratchpad~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/GodMode/ControlView.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/ControlView~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/GodMode/GodModeApp.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GodModeApp~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/GodMode/LiveActivity.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/LiveActivity~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/GodMode/Screens.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Screens~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/GodMode/Telemetry.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/Telemetry~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/GodMode/WebEditor.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/WebEditor~partial.swiftmodule"
+  },
+  "/Users/orion/godmode/ios/Shared/GMActivity.swift" : {
+    "const-values" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.swiftconstvalues",
+    "dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.d",
+    "diagnostics" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.dia",
+    "index-unit-output-path" : "/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.o",
+    "llvm-bc" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.bc",
+    "object" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.o",
+    "swift-dependencies" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity.swiftdeps",
+    "swiftmodule" : "/Users/orion/godmode/.buildsim/Build/Intermediates.noindex/GodMode.build/Debug-iphonesimulator/GodMode.build/Objects-normal/x86_64/GMActivity~partial.swiftmodule"
+  }
+}

@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'GodMode' in project 'GodMode'
+➜ Explicit dependency on target 'GodModeWidget' in project 'GodMode'
+Target 'GodModeWidget' in project 'GodMode' (no dependencies)

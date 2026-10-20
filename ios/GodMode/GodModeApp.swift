@@ -44,10 +44,10 @@ struct RootView: View {
     @StateObject private var live = LiveActivityController()
     var body: some View {
         TabView {
-            DeviceView().tabItem { Label("Device", systemImage: "cpu") }
+            WebEditorView().tabItem { Label("Edit", systemImage: "scissors") }
             ControlView().tabItem { Label("Control", systemImage: "hand.raised.square") }
+            DeviceView().tabItem { Label("Device", systemImage: "cpu") }
             AIView().tabItem { Label("AI", systemImage: "sparkles") }
-            SpeedView().tabItem { Label("Speed", systemImage: "gauge.with.dots.needle.67percent") }
             IdeasView().tabItem { Label("More", systemImage: "ellipsis.circle") }
         }
         .environmentObject(live)

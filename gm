@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""gm — GODMODE: mod the apps on your iPhone while it's plugged in.
+
+  gm status                         phone, iOS, developer mode, battery
+  gm devmode                        reveal/check Developer Mode
+  gm apps [-a] [filter]             installed apps (-a includes system apps)
+  gm mods                           available mod recipes
+  gm patch instagram --ipa X.ipa    inject tweaks, re-sign, install
+  gm speed instagram 2              set UI speed of a patched app (0.25 … 5)
+  gm launch|remove <mod|bundle>     open / uninstall
+  gm companion                      build + install the GODMODE phone app
+  gm ideas [patch|usb|app]          what else this can do
+"""
+import argparse
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from gmlib import config, device, ideas, patch  # noqa: E402
+from gmlib.device import DeviceError, run  # noqa: E402
+
+ROOT = os.path.dirname(os.path.realpath(__file__))
+COMPANION_BUNDLE = "com.orionjones.godmode"
+
+
+def bundle_of(name):
+    """Accept a mod name (instagram) or a raw bundle id."""
+    if "." in name:
+        return name
+    return patch.load_mod(name)["bundle_id"]
+
+
+def cmd_status(a):
+    d = device.pick(a.device)
+    info = device.details(d["identifier"])
+    dp, hw = info.get("deviceProperties", {}), info.get("hardwareProperties", {})
+    print(f"{dp.get('name')}  ·  {hw.get('marketingName')}  ·  iOS {dp.get('osVersionNumber')}")
+    print(f"  udid           {hw.get('udid')}")
+    print(f"  developer mode {dp.get('developerModeStatus')}")
+    print(f"  ddi mounted    {dp.get('ddiServicesAvailable')}")
+    mine = [x for x in device.apps(d["identifier"]) if x.get("bundleIdentifier", "").startswith("com.orionjones.godmode")]
+    print(f"  godmode apps   {', '.join(x['bundleIdentifier'] for x in mine) or 'none yet'}")
+
+
+def cmd_devmode(a):
+    d = device.pick(a.device)
+    status = device.details(d["identifier"]).get("deviceProperties", {}).get("developerModeStatus")
+    if status == "enabled":
+        print("✓ Developer Mode is already on.")
+        return
+    device.reveal_developer_mode(d["hardwareProperties"]["udid"])
+    print("Toggle revealed. On the phone: Settings › Privacy & Security › Developer Mode → On, then restart.\n"
+          "(Apple requires that tap + reboot on-device; nothing can flip it remotely.)")
+
+
+def cmd_apps(a):
+    d = device.pick(a.device)
+    rows = device.apps(d["identifier"], include_system=a.all)
+    for x in sorted(rows, key=lambda r: r.get("name", "").lower()):
+        line = f"{x.get('name', '?'):28} {x.get('bundleIdentifier', ''):45} {x.get('version', '')}"
+        if not a.filter or a.filter.lower() in line.lower():
+            print(line)
+
+
+def cmd_mods(a):
+    for f in sorted(os.listdir(os.path.join(ROOT, "mods"))):
+        if f.endswith(".json"):
+            m = json.load(open(os.path.join(ROOT, "mods", f)))
+            print(f"{f[:-5]:12} → {m['bundle_id']}")
+            for t in m.get("tweaks", []):
+                print(f"   + {t['name']}: {t['what']}")
+
+
+def cmd_patch(a):
+    patch.patch(a.mod, os.path.expanduser(a.ipa), dev_id=a.device, speed=a.speed,
+                install=not a.no_install, out_dir=a.keep)
+
+
+def cmd_speed(a):
+    b = bundle_of(a.target)
+    patch.push_speed(b, a.speed, device.pick(a.device)["identifier"])
+    print(f"✓ {b} → {a.speed}x (applies next time the app comes to the foreground)")
+
+
+def cmd_launch(a):
+    device.launch(device.pick(a.device)["identifier"], bundle_of(a.target))
+
+
+def cmd_remove(a):
+    device.uninstall(device.pick(a.device)["identifier"], bundle_of(a.target))
+    print("✓ removed")
+
+
+def cmd_companion(a):
+    ios = os.path.join(ROOT, "ios")
+    run(["xcodegen", "generate", "--spec", os.path.join(ios, "project.yml"), "--project", ios], capture=False)
+    dd = os.path.join(ROOT, ".build")
+    dev = device.pick(a.device)
+    print("• building GODMODE…")
+    run(["xcodebuild", "-project", os.path.join(ios, "GodMode.xcodeproj"), "-scheme", "GodMode",
+         "-destination", f"id={dev['hardwareProperties']['udid']}", "-derivedDataPath", dd,
+         f"DEVELOPMENT_TEAM={config.team()}", *config.xcode_auth_args(), "build", "-quiet"])
+    app = os.path.join(dd, "Build", "Products", "Debug-iphoneos", "GodMode.app")
+    d = dev["identifier"]
+    print("• installing…")
+    device.install(d, app)
+    device.launch(d, COMPANION_BUNDLE)
+    print("✓ GODMODE is on your phone")
+
+
+def cmd_ideas(a):
+    print(ideas.render(a.tag))
+
+
+def main():
+    p = argparse.ArgumentParser(prog="gm", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("-d", "--device", help="device name / udid (default: first plugged-in iPhone)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("status").set_defaults(fn=cmd_status)
+    sub.add_parser("devmode").set_defaults(fn=cmd_devmode)
+    s = sub.add_parser("apps"); s.add_argument("-a", "--all", action="store_true"); s.add_argument("filter", nargs="?"); s.set_defaults(fn=cmd_apps)
+    sub.add_parser("mods").set_defaults(fn=cmd_mods)
+    s = sub.add_parser("patch"); s.add_argument("mod"); s.add_argument("--ipa", required=True)
+    s.add_argument("--speed", type=float, help="bake a default UI speed into the app")
+    s.add_argument("--keep", metavar="DIR", help="also save the signed .app here")
+    s.add_argument("--no-install", action="store_true"); s.set_defaults(fn=cmd_patch)
+    s = sub.add_parser("speed"); s.add_argument("target"); s.add_argument("speed", type=float); s.set_defaults(fn=cmd_speed)
+    s = sub.add_parser("launch"); s.add_argument("target"); s.set_defaults(fn=cmd_launch)
+    s = sub.add_parser("remove"); s.add_argument("target"); s.set_defaults(fn=cmd_remove)
+    sub.add_parser("companion").set_defaults(fn=cmd_companion)
+    s = sub.add_parser("ideas"); s.add_argument("tag", nargs="?"); s.set_defaults(fn=cmd_ideas)
+    a = p.parse_args()
+    try:
+        a.fn(a)
+    except DeviceError as e:
+        sys.exit(f"✗ {e}")
+
+
+if __name__ == "__main__":
+    main()

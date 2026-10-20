@@ -1,0 +1,224 @@
+import SwiftUI
+import UIKit
+
+// MARK: - Device
+
+struct DeviceView: View {
+    @State private var tick = Date()
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Screen {
+            Header(title: "DEVICE", sub: "live telemetry")
+            Panel {
+                Row(k: "model", v: Self.model)
+                Row(k: "system", v: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)")
+                Row(k: "uptime", v: Self.fmt(ProcessInfo.processInfo.systemUptime))
+                Row(k: "cores", v: "\(ProcessInfo.processInfo.activeProcessorCount)")
+                Row(k: "ram", v: Self.bytes(Double(ProcessInfo.processInfo.physicalMemory)))
+            }
+            Panel {
+                Row(k: "battery", v: battery, hot: true)
+                Row(k: "thermal", v: thermal, hot: ProcessInfo.processInfo.thermalState.rawValue >= 2)
+                Row(k: "low power", v: ProcessInfo.processInfo.isLowPowerModeEnabled ? "ON" : "off")
+                Row(k: "reduce motion", v: UIAccessibility.isReduceMotionEnabled ? "ON" : "off")
+                Row(k: "disk free", v: Self.diskFree)
+            }
+            Text("updated \(tick.formatted(date: .omitted, time: .standard))")
+                .font(Theme.mono(10)).foregroundStyle(Theme.dim)
+        }
+        .onAppear { UIDevice.current.isBatteryMonitoringEnabled = true }
+        .onReceive(timer) { tick = $0 }
+    }
+
+    private var battery: String {
+        let d = UIDevice.current
+        let pct = d.batteryLevel < 0 ? "?" : "\(Int(d.batteryLevel * 100))%"
+        let state: String = switch d.batteryState {
+        case .charging: " ⚡︎ charging"
+        case .full: " full"
+        case .unplugged: ""
+        default: ""
+        }
+        return pct + state
+    }
+
+    private var thermal: String {
+        switch ProcessInfo.processInfo.thermalState {
+        case .nominal: "nominal"
+        case .fair: "fair"
+        case .serious: "SERIOUS"
+        case .critical: "CRITICAL"
+        @unknown default: "?"
+        }
+    }
+
+    static var model: String {
+        var sys = utsname()
+        uname(&sys)
+        return withUnsafeBytes(of: &sys.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+    }
+
+    static var diskFree: String {
+        let url = URL(fileURLWithPath: NSHomeDirectory())
+        let v = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        return bytes(Double(v?.volumeAvailableCapacityForImportantUsage ?? 0))
+    }
+
+    static func bytes(_ b: Double) -> String {
+        ByteCountFormatter.string(fromByteCount: Int64(b), countStyle: .file)
+    }
+
+    static func fmt(_ t: TimeInterval) -> String {
+        let s = Int(t)
+        return String(format: "%dd %02dh %02dm", s / 86400, (s % 86400) / 3600, (s % 3600) / 60)
+    }
+}
+
+// MARK: - Speed
+
+struct SpeedView: View {
+    @AppStorage("gm.speed") private var speed: Double = 1.0
+    @State private var flip = false
+    @State private var spin = false
+
+    private let presets: [Double] = [0.25, 0.5, 1, 2, 4]
+
+    var body: some View {
+        Screen {
+            Header(title: "SPEED", sub: "core animation clock")
+            Panel {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(String(format: "%.2fx", speed)).font(Theme.mono(44, .bold)).foregroundStyle(Theme.acid)
+                    Spacer()
+                    Text(speed > 1 ? "faster" : speed < 1 ? "slow-mo" : "stock")
+                        .font(Theme.mono(12)).foregroundStyle(Theme.dim)
+                }
+                Slider(value: $speed, in: 0.1...6)
+                HStack {
+                    ForEach(presets, id: \.self) { p in
+                        Button("\(p.formatted())x") { speed = p }
+                            .font(Theme.mono(12, .semibold))
+                            .padding(.vertical, 6).frame(maxWidth: .infinity)
+                            .background(speed == p ? Theme.acid : Theme.line)
+                            .foregroundStyle(speed == p ? .black : .white)
+                    }
+                }
+            }
+            Panel {
+                Text("TEST RIG").font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                HStack(spacing: 24) {
+                    RoundedRectangle(cornerRadius: 6).fill(Theme.acid)
+                        .frame(width: 44, height: 44)
+                        .rotationEffect(.degrees(spin ? 360 : 0))
+                        .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: spin)
+                    Circle().fill(.white)
+                        .frame(width: flip ? 64 : 24, height: flip ? 64 : 24)
+                        .animation(.spring(duration: 0.6, bounce: 0.5), value: flip)
+                        .frame(width: 64, height: 64)
+                    Button("bounce") { flip.toggle() }.font(Theme.mono(13, .bold))
+                }
+                Text("Every animation in this app — including tab switches and sheets — runs on this clock.")
+                    .font(Theme.mono(11)).foregroundStyle(Theme.dim)
+            }
+            Panel {
+                Text("PATCHED APPS").font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                Text("Apps patched by gm carry SpeedHack. Three-finger double-tap inside them for a speed picker, or from the Mac:")
+                    .font(Theme.mono(12))
+                Text("gm speed instagram 2").font(Theme.mono(13, .bold)).foregroundStyle(Theme.acid)
+            }
+            Panel {
+                Text("SYSTEM-WIDE").font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                Text("iOS has no global animation-scale switch (Android does). Closest thing: Reduce Motion swaps zooms for fast crossfades. Make a Shortcut named \"GM Motion\" with the action Set Reduce Motion → Toggle, then:")
+                    .font(Theme.mono(12))
+                Button("run GM Motion shortcut") {
+                    if let url = URL(string: "shortcuts://run-shortcut?name=GM%20Motion") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(Theme.mono(13, .bold))
+            }
+        }
+        .onAppear { spin = true }
+    }
+}
+
+// MARK: - Mods
+
+struct Mod: Identifiable {
+    let id: String
+    let app: String
+    let tweak: String
+    let does: [String]
+    let ready: Bool
+}
+
+let MODS: [Mod] = [
+    Mod(id: "instagram", app: "Instagram", tweak: "SCInsta + SpeedHack",
+        does: ["hide Reels tab", "hide Explore / Create tabs", "reorder tab bar", "no ads, no Meta AI",
+               "no suggested posts", "download posts/reels/stories", "keep deleted DMs", "no seen receipts"],
+        ready: true),
+    Mod(id: "youtube", app: "YouTube", tweak: "YTLite", does: ["no Shorts tab", "no ads", "background play"], ready: false),
+    Mod(id: "tiktok", app: "TikTok", tweak: "BHTikTok", does: ["no ads", "save w/o watermark", "hide Shop/Live"], ready: false),
+]
+
+struct ModsView: View {
+    var body: some View {
+        Screen {
+            Header(title: "MODS", sub: "patch over usb")
+            ForEach(MODS) { m in
+                Panel {
+                    HStack {
+                        Text(m.app.uppercased()).font(Theme.mono(18, .bold))
+                        Spacer()
+                        Text(m.ready ? "READY" : "QUEUED")
+                            .font(Theme.mono(10, .bold))
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(m.ready ? Theme.acid : Theme.line)
+                            .foregroundStyle(m.ready ? .black : Theme.dim)
+                    }
+                    Text(m.tweak).font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                    ForEach(m.does, id: \.self) { Text("› \($0)").font(Theme.mono(12)) }
+                    if m.ready {
+                        Text("gm patch \(m.id) --ipa ~/Downloads/\(m.app).ipa")
+                            .font(Theme.mono(11, .bold)).foregroundStyle(Theme.acid)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Ideas
+
+let IDEAS: [(String, String)] = [
+    ("PATCH", "Doom-scroll governor: after N minutes the app greys out and drops to 0.25x"),
+    ("PATCH", "FLEX inspector in any app: view tree, live-edit labels, browse its files"),
+    ("PATCH", "Boring mode: grayscale + no badges for any addictive app"),
+    ("PATCH", "Force dark mode / custom accent / custom font in any app"),
+    ("PATCH", "Log every network request an app makes, pull it over USB"),
+    ("USB", "Screenshot / screen-record the phone from the Mac"),
+    ("USB", "Live syslog filtered to one app"),
+    ("USB", "GPS spoofing while plugged in"),
+    ("USB", "Battery forensics: cycles, health, real mAh"),
+    ("USB", "Auto-run gm the moment the phone is plugged in"),
+    ("APP", "Live sensor wall: accel, gyro, barometer, LiDAR depth"),
+    ("APP", "Thermal + RAM Live Activity on the lock screen"),
+    ("APP", "On-device AI scratchpad (Foundation Models)"),
+]
+
+struct IdeasView: View {
+    var body: some View {
+        Screen {
+            Header(title: "IDEAS", sub: "what's next")
+            ForEach(IDEAS, id: \.1) { tag, idea in
+                HStack(alignment: .top, spacing: 10) {
+                    Text(tag).font(Theme.mono(10, .bold)).foregroundStyle(.black)
+                        .frame(width: 46).padding(.vertical, 3).background(Theme.acid)
+                    Text(idea).font(Theme.mono(13))
+                }
+            }
+        }
+    }
+}

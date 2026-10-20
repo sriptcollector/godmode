@@ -1,0 +1,6 @@
+.build/
+*.xcodeproj/
+tweaks/speedhack/SpeedHack.dylib
+__pycache__/
+.DS_Store
+*.ipa

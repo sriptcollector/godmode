@@ -1,0 +1,16 @@
+{
+  "name": "Instagram",
+  "app_store_bundle": "com.burbn.instagram",
+  "bundle_id": "com.orionjones.godmode.instagram",
+  "display_name": "Insta GM",
+  "tweaks": [
+    {
+      "name": "SCInsta",
+      "url": "https://github.com/SoCuul/SCInsta/releases/download/v1.1.1/com.socuul.scinsta_1.1.1_rootless.deb",
+      "tested_with": "Instagram 418.2.0",
+      "what": "hide reels tab / explore tab / create tab, reorder tab bar, hide ads + Meta AI, no suggested posts, download media, keep deleted DMs, disable seen receipts"
+    }
+  ],
+  "speedhack": true,
+  "settings_hint": "SCInsta settings live inside Instagram (screenshots: github.com/SoCuul/SCInsta#opening-tweak-settings) -> Navigation -> Hide reels tab"
+}

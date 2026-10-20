@@ -1,0 +1,7 @@
+{
+  "name": "Self-test",
+  "bundle_id": "com.orionjones.godmode.selftest",
+  "display_name": "GM Test",
+  "tweaks": [],
+  "speedhack": true
+}

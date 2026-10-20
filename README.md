@@ -87,6 +87,7 @@ supports (SCInsta v1.1.1 is tested on Instagram 418.2.0). SCInsta's wiki points 
 |---|---|---|
 | Instagram | ready | [SCInsta](https://github.com/SoCuul/SCInsta): hide Reels/Explore/Create tabs, reorder tab bar, no ads/Meta AI, no suggested posts, downloads, keep deleted DMs, no seen receipts |
 | YouTube | ready | [YTLite](https://github.com/dayanch96/YTLite): no ads, hide Shorts, background play, downloads |
-| X, Reddit, Discord, Telegram | ready | GodModeKit only: tap-to-hide nav bar editor, speed, limit |
+| X, Reddit, Discord | ready | GodModeKit only: tap-to-hide nav bar editor, speed, limit |
+| Telegram | dropped | crashes in CloudKit: the re-signed copy has no iCloud entitlement |
 | Snapchat, WhatsApp, Messenger | skipped | they detect re-signed clients and ban accounts |
 | selftest | ready | SpeedHack only. `gm patch selftest --ipa <any decrypted ipa>` proves the pipeline |

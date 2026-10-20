@@ -162,7 +162,6 @@ let MODS: [Mod] = [
     Mod(id: "x", app: "X", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
     Mod(id: "reddit", app: "Reddit", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
     Mod(id: "discord", app: "Discord", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
-    Mod(id: "telegram", app: "Telegram", tweak: "GodModeKit", does: ["tap-to-hide any tab / button", "UI speed", "daily limit"], ready: true),
 ]
 
 struct ModsView: View {

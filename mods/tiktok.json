@@ -1,0 +1,11 @@
+{
+  "name": "TikTok",
+  "app_store_bundle": "com.zhiliaoapp.musically",
+  "bundle_id": "com.orionjones.godmode.tiktok",
+  "display_name": "TikTok GM",
+  "ipa_url": "https://github.com/asjrx/ASJTok/releases/download/v1.3/ASJTok-1.3_47.0.0.ipa",
+  "tweaks": [],
+  "note": "ASJTok 1.3 IPA already has the ASJTok tweak injected (TikTok 47.0.0): downloads, no ads, clear display, privacy toggles. Settings live in the profile menu.",
+  "kit": true,
+  "settings_hint": "ASJTok settings: profile menu. Anything else: 3-finger double-tap -> Edit layout."
+}

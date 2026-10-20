@@ -23,6 +23,7 @@ targets:
       INFOPLIST_KEY_UIUserInterfaceStyle: Dark
       INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
       INFOPLIST_KEY_NSSupportsLiveActivities: YES
+      CODE_SIGN_ENTITLEMENTS: GodMode/GodMode.entitlements
   GodModeWidget:
     type: app-extension
     platform: iOS

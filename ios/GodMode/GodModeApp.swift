@@ -45,9 +45,9 @@ struct RootView: View {
     var body: some View {
         TabView {
             DeviceView().tabItem { Label("Device", systemImage: "cpu") }
-            SpeedView().tabItem { Label("Speed", systemImage: "gauge.with.dots.needle.67percent") }
+            ControlView().tabItem { Label("Control", systemImage: "hand.raised.square") }
             AIView().tabItem { Label("AI", systemImage: "sparkles") }
-            ModsView().tabItem { Label("Mods", systemImage: "puzzlepiece.extension") }
+            SpeedView().tabItem { Label("Speed", systemImage: "gauge.with.dots.needle.67percent") }
             IdeasView().tabItem { Label("More", systemImage: "ellipsis.circle") }
         }
         .environmentObject(live)

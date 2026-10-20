@@ -8,8 +8,24 @@ gm patch instagram                 # Instagram with Reels tab hidden + GodModeKi
 gm patch all                       # every social app in mods/
 gm speed instagram 2               # make Instagram's UI run 2x (0.25 … 5)
 gm companion                       # build + install the GODMODE phone app
+gm gps la                          # fake the phone's GPS (la/nyc/tokyo/… or lat,lon; `gm gps off`)
 gm ideas                           # what else to build
 ```
+
+## The GODMODE phone app (`gm companion`)
+
+Runs on the phone, no computer needed once installed:
+
+- **Device** — live thermal / battery / RAM / disk, plus a **Live Activity**: one tap pins thermal,
+  battery and RAM to your Lock Screen and Dynamic Island, refreshed every few seconds.
+- **Speed** — scrub the app's own UI from 0.1x to 6x, and a button to toggle Reduce Motion system-wide.
+- **AI** — a private scratchpad on Apple's on-device model (FoundationModels, iOS 26+). Nothing leaves the phone.
+- **Mods** — the catalog, with the one-line `gm patch` command per app.
+- **More** — GPS spoof instructions + the ideas backlog.
+
+Built as two targets: the app and a WidgetKit extension (`com.orionjones.godmode.widget`) that draws
+the Live Activity. Both share `ios/Shared/GMActivity.swift`; the app pushes fresh telemetry on a timer,
+so no App Group is needed.
 
 ## How it works
 

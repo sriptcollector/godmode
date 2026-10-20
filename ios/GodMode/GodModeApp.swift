@@ -41,13 +41,16 @@ enum UISpeed {
 }
 
 struct RootView: View {
+    @StateObject private var live = LiveActivityController()
     var body: some View {
         TabView {
             DeviceView().tabItem { Label("Device", systemImage: "cpu") }
             SpeedView().tabItem { Label("Speed", systemImage: "gauge.with.dots.needle.67percent") }
+            AIView().tabItem { Label("AI", systemImage: "sparkles") }
             ModsView().tabItem { Label("Mods", systemImage: "puzzlepiece.extension") }
-            IdeasView().tabItem { Label("Ideas", systemImage: "lightbulb") }
+            IdeasView().tabItem { Label("More", systemImage: "ellipsis.circle") }
         }
+        .environmentObject(live)
     }
 }
 

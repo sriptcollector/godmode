@@ -4,6 +4,7 @@ import UIKit
 // MARK: - Device
 
 struct DeviceView: View {
+    @EnvironmentObject var live: LiveActivityController
     @State private var tick = Date()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -23,6 +24,31 @@ struct DeviceView: View {
                 Row(k: "low power", v: ProcessInfo.processInfo.isLowPowerModeEnabled ? "ON" : "off")
                 Row(k: "reduce motion", v: UIAccessibility.isReduceMotionEnabled ? "ON" : "off")
                 Row(k: "disk free", v: Self.diskFree)
+                Row(k: "ram free", v: "\(Telemetry.freeRAMMB()) MB")
+                Row(k: "this app", v: "\(Telemetry.footprintMB()) MB")
+            }
+            Panel {
+                HStack {
+                    Text("LOCK SCREEN").font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                    Spacer()
+                    Text(live.running ? "LIVE" : "off")
+                        .font(Theme.mono(10, .bold))
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(live.running ? Theme.acid : Theme.line)
+                        .foregroundStyle(live.running ? .black : Theme.dim)
+                }
+                Text("Pin thermal, battery and RAM to your Lock Screen and Dynamic Island as a Live Activity.")
+                    .font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                Button(live.running ? "stop live activity" : "start live activity") {
+                    live.running ? live.stop() : live.start()
+                }
+                .font(Theme.mono(14, .bold))
+                .padding(.vertical, 8).frame(maxWidth: .infinity)
+                .background(live.running ? Theme.line : Theme.acid)
+                .foregroundStyle(live.running ? .white : .black)
+                if let e = live.lastError {
+                    Text(e).font(Theme.mono(10)).foregroundStyle(.red)
+                }
             }
             Text("updated \(tick.formatted(date: .omitted, time: .standard))")
                 .font(Theme.mono(10)).foregroundStyle(Theme.dim)
@@ -212,6 +238,14 @@ let IDEAS: [(String, String)] = [
 struct IdeasView: View {
     var body: some View {
         Screen {
+            Header(title: "MORE", sub: "tools + what's next")
+            Panel {
+                Text("GPS SPOOF").font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                Text("Fake the phone's location. iOS only lets this run from the plugged-in Mac (it needs the developer tunnel), so GODMODE drives it from there:")
+                    .font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                Text("gm gps la      gm gps 34.05,-118.24      gm gps off")
+                    .font(Theme.mono(12, .bold)).foregroundStyle(Theme.acid).textSelection(.enabled)
+            }
             Header(title: "IDEAS", sub: "what's next")
             ForEach(IDEAS, id: \.1) { tag, idea in
                 HStack(alignment: .top, spacing: 10) {

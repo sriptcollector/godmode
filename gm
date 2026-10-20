@@ -10,6 +10,7 @@
   gm speed instagram 2              set UI speed of a patched app (0.25 … 5)
   gm launch|remove <mod|bundle>     open / uninstall
   gm companion                      build + install the GODMODE phone app
+  gm gps <place|lat,lon|off>        fake the phone's location while plugged in
   gm ideas [patch|usb|app]          what else this can do
 """
 import argparse
@@ -18,7 +19,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from gmlib import config, device, ideas, patch  # noqa: E402
+from gmlib import config, device, gps, ideas, patch  # noqa: E402
 from gmlib.device import DeviceError, run  # noqa: E402
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -123,6 +124,15 @@ def cmd_companion(a):
     print("✓ GODMODE is on your phone")
 
 
+def cmd_gps(a):
+    if a.where.lower() in ("off", "clear", "real"):
+        gps.clear()
+        print("✓ GPS restored to real location")
+    else:
+        lat, lon = gps.set_location(a.where.lower())
+        print(f"✓ location set to {lat}, {lon} (holds until `gm gps off` or you unplug)")
+
+
 def cmd_ideas(a):
     print(ideas.render(a.tag))
 
@@ -143,6 +153,7 @@ def main():
     s = sub.add_parser("launch"); s.add_argument("target"); s.set_defaults(fn=cmd_launch)
     s = sub.add_parser("remove"); s.add_argument("target"); s.set_defaults(fn=cmd_remove)
     sub.add_parser("companion").set_defaults(fn=cmd_companion)
+    s = sub.add_parser("gps"); s.add_argument("where", help="sf/la/nyc/london/tokyo/paris/vegas/miami, \"lat,lon\", or off"); s.set_defaults(fn=cmd_gps)
     s = sub.add_parser("ideas"); s.add_argument("tag", nargs="?"); s.set_defaults(fn=cmd_ideas)
     a = p.parse_args()
     try:

@@ -19,7 +19,7 @@ IDEAS = [
     # USB
     ("USB",   "Screen-record or screenshot the phone from the Mac on demand", "xcrun devicectl / idevicescreenshot"),
     ("USB",   "Live syslog firehose filtered by app — see what Instagram logs", "idevicesyslog | grep"),
-    ("USB",   "Spoof GPS location for testing (only while plugged in + DDI mounted)", "pymobiledevice3 developer dvt simulate-location"),
+    ("DONE",  "GPS spoofing while plugged in — `gm gps la` / `gm gps 34.05,-118.24` / `gm gps off`", "pymobiledevice3 dvt simulate-location"),
     ("USB",   "Pull any dev-signed app's sandbox (databases, caches) to the Mac", "devicectl device copy from --domain-type appDataContainer"),
     ("USB",   "Battery forensics: cycle count, health, real mAh, charging watts", "idevicediagnostics ioregentry AppleSmartBattery"),
     ("USB",   "One-command backup + diff of what changed on the phone since last time", "idevicebackup2"),
@@ -27,9 +27,9 @@ IDEAS = [
     # companion app
     ("APP",   "Speed lab: scrub the companion's own UI from 0.1x to 10x to feel animation curves", "window.layer.speed"),
     ("APP",   "Sensor dashboard: live accelerometer/gyro/barometer/LiDAR depth readouts", "CoreMotion + ARKit"),
-    ("APP",   "Thermal + memory monitor with a Live Activity on the lock screen", "ProcessInfo.thermalState + ActivityKit"),
+    ("DONE",  "Thermal + RAM + battery Live Activity on the lock screen & Dynamic Island", "ActivityKit widget extension"),
     ("APP",   "Shortcut launcher: one tap to toggle Reduce Motion, Low Power, grayscale", "shortcuts://run-shortcut"),
-    ("APP",   "Private on-device AI scratchpad via Apple Foundation Models", "FoundationModels framework"),
+    ("DONE",  "Private on-device AI scratchpad (nothing leaves the phone)", "FoundationModels, iOS 26+"),
 ]
 
 

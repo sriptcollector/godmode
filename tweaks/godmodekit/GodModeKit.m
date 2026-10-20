@@ -13,6 +13,8 @@
 
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
+#import <dlfcn.h>
 
 #define GMLog(fmt, ...) NSLog(@"[GODMODE] " fmt, ##__VA_ARGS__)
 
@@ -442,8 +444,22 @@ static UIView *Deepest(UIView *v, CGPoint p, UIView *skip) {
                                           style:UIAlertActionStyleDefault handler:^(id _) { [self speed]; }]];
     [a addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"⏳  Daily limit  ·  %@", limit ? [NSString stringWithFormat:@"%ld min", (long)limit] : @"off"]
                                           style:UIAlertActionStyleDefault handler:^(id _) { [self limit]; }]];
+    // FLEX ships as a framework inside the patched app; load it lazily so GodModeKit needn't link it.
+    if (NSClassFromString(@"FLEXManager")) {
+        [a addAction:[UIAlertAction actionWithTitle:@"🔎  Inspector (FLEX)" style:UIAlertActionStyleDefault handler:^(id _) {
+            [GMMenu showFLEX];
+        }]];
+    }
     [a addAction:[UIAlertAction actionWithTitle:@"Close" style:UIAlertActionStyleCancel handler:nil]];
     [self present:a];
+}
+
++ (void)showFLEX {
+    Class flex = NSClassFromString(@"FLEXManager");
+    if (!flex) return;
+    id (*msg)(id, SEL) = (id (*)(id, SEL))objc_msgSend;
+    id mgr = msg(flex, @selector(sharedManager));
+    if (mgr) msg(mgr, @selector(showExplorer));
 }
 
 - (void)present:(UIAlertController *)a {
@@ -542,7 +558,13 @@ __attribute__((constructor)) static void GMInit(void) {
     SeedDefaults();
     gHookedRows = [NSMutableSet set];
     LoadRules();
-    GMLog(@"GodModeKit loaded (speed %.2fx, %lu hide rules)", ChosenSpeed(), (unsigned long)gRules.count);
+    // Load the bundled FLEX inspector if it shipped with the app, so its menu item lights up.
+    if (!NSClassFromString(@"FLEXManager")) {
+        dlopen([[[NSBundle.mainBundle.privateFrameworksURL
+                  URLByAppendingPathComponent:@"FLEX.framework/FLEX"] path] fileSystemRepresentation], RTLD_NOW);
+    }
+    GMLog(@"GodModeKit loaded (speed %.2fx, %lu hide rules, FLEX %@)",
+          ChosenSpeed(), (unsigned long)gRules.count, NSClassFromString(@"FLEXManager") ? @"yes" : @"no");
 
     NSNotificationCenter *nc = NSNotificationCenter.defaultCenter;
     void (^refresh)(NSNotification *) = ^(NSNotification *n) {

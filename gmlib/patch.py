@@ -77,6 +77,10 @@ def patch(mod_name, ipa=None, dev_id=None, speed=None, install=True, out_dir=Non
         files = [fetch(t["url"]) for t in mod.get("tweaks", [])]
         if mod.get("kit", True):
             files.append(kit_dylib())
+        if mod.get("flex", True):  # bundle the FLEX inspector framework
+            flex = os.path.join(ROOT, "tweaks", "flex", "FLEX.framework")
+            if os.path.isdir(flex):
+                files.append(flex)
 
         injected = os.path.join(work, "injected.ipa")
         print(f"• injecting {', '.join(os.path.basename(f) for f in files)}")

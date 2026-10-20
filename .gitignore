@@ -4,3 +4,4 @@ tweaks/*/*.dylib
 __pycache__/
 .DS_Store
 *.ipa
+# FLEX.framework is a build artifact committed on purpose (2.3MB)

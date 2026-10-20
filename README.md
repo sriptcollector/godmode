@@ -12,6 +12,23 @@ gm gps la                          # fake the phone's GPS (la/nyc/tokyo/… or l
 gm ideas                           # what else to build
 ```
 
+## FLEX: deep native inspector in every patched app
+
+Every app `gm patch` builds now carries **FLEX** (the open-source in-app debugger, `tweaks/flex/`).
+Open the GODMODE menu (three-finger double-tap) → **Inspector (FLEX)** and you get, natively, inside
+the real app:
+
+- the live **view hierarchy** — tap any view, see its class + frame, edit its properties on the spot
+- an **object explorer** — read and change any ivar/property, call methods
+- the app's **sandbox**: files, UserDefaults, and keychain, browsable and editable
+- a **network logger** of everything the app requests
+
+GodModeKit loads it lazily (`dlopen` of the bundled framework) and only shows the menu item when the
+`FLEXManager` class is present. Verified in the simulator: menu → Inspector opens the FLEX view tree.
+
+Note: this is most useful on apps that let a re-signed build run (Reddit, YouTube, X, Discord, TikTok).
+Instagram still blocks login on re-signed builds — for Instagram use the Edit tab (web) instead.
+
 ## The in-app UI editor (Edit tab) — the reliable way to kill Reels
 
 The re-signed-IPA mods (SCInsta etc.) are fragile and Meta blocks login on them. So the GODMODE app's

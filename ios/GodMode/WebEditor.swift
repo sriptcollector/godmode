@@ -11,6 +11,8 @@ struct Site: Identifiable, Hashable {
     let name: String
     let url: String
     let presets: [Preset]
+    var defaultOn: [String] = []   // preset labels hidden out of the box
+    var note: String? = nil
 }
 
 struct Preset: Identifiable, Hashable {
@@ -35,14 +37,41 @@ let SITES: [Site] = [
         Preset(label: "Suggested", css: """
         div:has(> div > span:is([title="Suggested for you"])) { display:none !important; }
         """),
-    ]),
+    ], defaultOn: ["Reels", "Explore", "Suggested"]),
+    Site(id: "tiktok", name: "TikTok", url: "https://www.tiktok.com/", presets: [
+        Preset(label: "For You feed", css: """
+        [data-e2e="nav-foryou"] { display:none !important; }
+        """),
+        Preset(label: "Explore", css: """
+        [data-e2e="nav-explore"], a[href="/explore"] { display:none !important; }
+        """),
+        Preset(label: "LIVE", css: """
+        [data-e2e="nav-live"], a[href*="/live"] { display:none !important; }
+        """),
+        Preset(label: "Shop", css: """
+        [data-e2e="nav-shop"], a[href*="/shop"] { display:none !important; }
+        """),
+        Preset(label: "Friends", css: """
+        [data-e2e="nav-friends"] { display:none !important; }
+        """),
+    ], defaultOn: ["For You feed", "Explore", "LIVE", "Shop"],
+       note: "TikTok's whole point is the For-You feed; hiding it pushes you to Following. Your native TikTok GM (ASJTok) hides more inside the real app."),
+    Site(id: "snapchat", name: "Snapchat", url: "https://web.snapchat.com/", presets: [
+        Preset(label: "Stories", css: """
+        [aria-label*="Stories" i], section:has(> h2:is([aria-label*="Stories" i])) { display:none !important; }
+        """),
+        Preset(label: "Spotlight", css: """
+        [aria-label*="Spotlight" i], a[href*="spotlight"] { display:none !important; }
+        """),
+    ], defaultOn: ["Spotlight"],
+       note: "Snapchat is a native-only app — web.snapchat.com is just chat/calling and has little Spotlight to hide. There's no clean no-jailbreak way to strip Spotlight from the real Snapchat app; Control can block Snapchat entirely."),
     Site(id: "youtube", name: "YouTube", url: "https://m.youtube.com/", presets: [
         Preset(label: "Shorts", css: """
         ytm-pivot-bar-item-renderer:has([aria-label*="Shorts" i]),
         ytm-rich-section-renderer:has(a[href*="/shorts"]),
         ytm-reel-shelf-renderer, [is-shorts] { display:none !important; }
         """),
-    ]),
+    ], defaultOn: ["Shorts"]),
     Site(id: "reddit", name: "Reddit", url: "https://www.reddit.com/", presets: [
         Preset(label: "Recommended", css: """
         shreddit-feed [data-testid="recommendation"], faceplate-tracker[source="recommendation"] { display:none !important; }
@@ -85,6 +114,8 @@ struct WebEditorView: View {
             if store.count(site.id) > 0 {
                 Button("Clear all (\(store.count(site.id)))", role: .destructive) { store.clear(site.id) }
             }
+        } message: {
+            if let note = site.note { Text(note) }
         }
     }
 
@@ -126,6 +157,18 @@ final class WebRules: ObservableObject {
         if let raw = d.dictionary(forKey: "gm.web.presets") as? [String: [String]] {
             presets = raw.mapValues(Set.init)
         }
+        seedDefaults()
+    }
+
+    // First time we ever see a site, turn its distraction presets on so it "just works".
+    private func seedDefaults() {
+        var seeded = Set(d.stringArray(forKey: "gm.web.seeded") ?? [])
+        var changed = false
+        for site in SITES where !seeded.contains(site.id) && !site.defaultOn.isEmpty {
+            presets[site.id] = Set(site.defaultOn)
+            seeded.insert(site.id); changed = true
+        }
+        if changed { savePresets(); d.set(Array(seeded), forKey: "gm.web.seeded") }
     }
 
     func selectors(_ site: String) -> [String] { sel[site] ?? [] }
@@ -167,6 +210,8 @@ struct WebContainer: UIViewRepresentable {
         let cfg = WKWebViewConfiguration()
         cfg.websiteDataStore = .default()          // persistent cookies → login sticks
         cfg.defaultWebpagePreferences.preferredContentMode = .mobile
+        cfg.allowsInlineMediaPlayback = true       // keep video inline so it can't hijack fullscreen
+        cfg.mediaTypesRequiringUserActionForPlayback = .all   // no autoplay doomscroll
         let ucc = WKUserContentController()
         ucc.add(context.coordinator, name: "gmHide")
         ucc.addUserScript(WKUserScript(source: Self.js, injectionTime: .atDocumentStart, forMainFrameOnly: false))

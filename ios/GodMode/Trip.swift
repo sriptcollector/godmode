@@ -68,6 +68,7 @@ final class TripEngine: ObservableObject {
     private var timer: Timer?
     private var dwell: Double = 0         // seconds left parked at a waypoint
     private var nextStopIdx = 0
+    private var stopVerts: [Int] = []     // vertex index of each waypoint after the first
 
     var etaSeconds: Double {
         guard total > 0 else { return 0 }
@@ -161,6 +162,7 @@ final class TripEngine: ObservableObject {
             }
         }
         route = pts; cum = c; limit = lim; cruiseAt = cruise; total = c.last ?? 0
+        stopVerts = stops.sorted()
         done = 0; position = pts[0]; speed = 0; nextStopIdx = 1
         message = String(format: "%@ · %.1f km", mode.label.lowercased(), total / 1000)
     }
@@ -171,7 +173,7 @@ final class TripEngine: ObservableObject {
         previewTask?.cancel()
         if route.isEmpty { await plan() }
         guard !route.isEmpty else { return }
-        if done >= total { done = 0; speed = 0 }
+        if done >= total { done = 0; speed = 0; nextStopIdx = 1 }
         running = true
         if let p = position { Spoofer.shared.move(p, name: "\(mode.label) trip") }
         timer?.invalidate()
@@ -181,7 +183,7 @@ final class TripEngine: ObservableObject {
     }
 
     func pause() { running = false; timer?.invalidate(); timer = nil; speed = 0 }
-    func stop() { pause(); done = 0; dwell = 0; position = route.first }
+    func stop() { pause(); done = 0; dwell = 0; nextStopIdx = 1; position = route.first }
 
     private func tick(_ realDt: Double) {
         guard running, !route.isEmpty else { return }
@@ -231,13 +233,8 @@ final class TripEngine: ObservableObject {
     }
 
     private func upcomingStop() -> Int? {
-        // stops are vertices whose limit is exactly 0, excluding the start
-        var seen = 0
-        for (k, l) in limit.enumerated() where l == 0 && k > 0 {
-            seen += 1
-            if seen == nextStopIdx { return k }
-        }
-        return nil
+        let k = nextStopIdx - 1
+        return k >= 0 && k < stopVerts.count ? stopVerts[k] : nil
     }
 
     private func segIndex(_ s: Double) -> Int {
@@ -319,7 +316,8 @@ private func densify(_ pts: [CLLocationCoordinate2D], step: Double) -> [CLLocati
     var out: [CLLocationCoordinate2D] = [pts[0]]
     for i in 1..<pts.count {
         let a = pts[i - 1], b = pts[i]
-        let n = max(1, Int(dist(a, b) / step))
+        // cap points per segment so a cross-continent leg can't balloon into 100k+ vertices
+        let n = min(2000, max(1, Int(dist(a, b) / step)))
         for k in 1...n {
             let t = Double(k) / Double(n)
             out.append(.init(latitude: a.latitude + (b.latitude - a.latitude) * t,

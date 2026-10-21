@@ -44,6 +44,10 @@ enum LaunchArgs {
         } else if a.contains("--unspoof") {
             UserDefaults.standard.set(false, forKey: "gm.geo.on")
             Spoofer.shared.stop()
+        } else if GeoSpoof.on, let (lat, lon) = GeoSpoof.coord {
+            // App was killed (update, crash, reboot) while faking — pick up where it left off.
+            Spoofer.shared.move(.init(latitude: lat, longitude: lon),
+                                name: UserDefaults.standard.string(forKey: "gm.geo.name") ?? "Pin")
         }
     }
 }

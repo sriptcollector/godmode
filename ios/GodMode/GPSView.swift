@@ -1,31 +1,12 @@
 import SwiftUI
 import MapKit
 
-// Pick any spot on a map (or plan a trip) and fake the whole phone's location there.
-// Standalone: OnDeviceGPS drives the phone's own developer location service through LocalDevVPN —
-// no Mac needed after the one-time `gm pairphone`.
-//   • Native patched apps report the pin on-device via their own GODMODE menu → Fake GPS.
+// GPS: one full-screen satellite map. Tap anywhere (or a hotel/club, or search "Tokyo") → a pin
+// with two choices: Teleport there now, or add it as a trip stop. Once there are stops a compact
+// trip bar appears (walk / drive / boat, time scale, play). Everything is standalone: OnDeviceGPS
+// drives the phone's own developer location service through LocalDevVPN.
 
-struct GPSPlace: Identifiable, Hashable {
-    var id: String { name }
-    let name: String
-    let lat: Double
-    let lon: Double
-}
-
-let GPS_PLACES: [GPSPlace] = [
-    .init(name: "San Francisco", lat: 37.7749, lon: -122.4194),
-    .init(name: "New York", lat: 40.7128, lon: -74.0060),
-    .init(name: "Miami", lat: 25.7617, lon: -80.1918),
-    .init(name: "Las Vegas", lat: 36.1699, lon: -115.1398),
-    .init(name: "London", lat: 51.5074, lon: -0.1278),
-    .init(name: "Tokyo", lat: 35.6762, lon: 139.6503),
-    .init(name: "Pyongyang", lat: 39.0392, lon: 125.7625),
-    .init(name: "Paris", lat: 48.8566, lon: 2.3522),
-    .init(name: "Sydney", lat: -33.8688, lon: 151.2093),
-]
-
-// Shared with WebEditor via UserDefaults — WebRules reads these to override geolocation in its web views.
+// The current fake spot, persisted so the UI survives relaunch.
 enum GeoSpoof {
     static let d = UserDefaults.standard
     static var on: Bool { d.bool(forKey: "gm.geo.on") }
@@ -41,42 +22,56 @@ enum GeoSpoof {
 }
 
 
+
 struct GPSView: View {
     @AppStorage("gm.geo.on") private var on = false
     @AppStorage("gm.geo.name") private var name = ""
-    @AppStorage("gm.geo.lat") private var lat = 37.7749
-    @AppStorage("gm.geo.lon") private var lon = -122.4194
+    @AppStorage("gm.geo.lat") private var lat = 39.0392
+    @AppStorage("gm.geo.lon") private var lon = 125.7625
     @ObservedObject private var device = OnDeviceGPS.shared
     @ObservedObject private var trip = TripEngine.shared
     @StateObject private var pois = POISearch()
-    @State private var tool = "teleport"                      // "teleport" | "trip"
     @State private var camera: MapCameraPosition = .automatic
-    @State private var picked: MKMapItem?
+    @State private var candidate: Candidate?
     @State private var query = ""
     @State private var results: [MKMapItem] = []
+    @State private var searching = false
+    @State private var follow = false
+    @State private var showStops = false
     @State private var visible: MKCoordinateRegion?
+    @FocusState private var searchFocused: Bool
+
+    struct Candidate: Equatable {
+        var coord: CLLocationCoordinate2D
+        var name: String
+        var detail: String?
+        static func == (a: Candidate, b: Candidate) -> Bool {
+            a.coord.latitude == b.coord.latitude && a.coord.longitude == b.coord.longitude && a.name == b.name
+        }
+    }
 
     private var pin: CLLocationCoordinate2D { .init(latitude: lat, longitude: lon) }
 
     var body: some View {
-        Screen {
-            Header(title: "GPS", sub: trip.running ? "\(trip.mode.label.lowercased())ing · \(name)"
-                                     : on ? "faking: \(name)" : "real location")
-
-            Picker("", selection: $tool) {
-                Text("Teleport").tag("teleport")
-                Text("Trip").tag("trip")
-            }.pickerStyle(.segmented)
-
-            searchBar
-            map
-            if let p = picked { poiCard(p) }
-
-            if tool == "teleport" { teleportPanel } else { tripPanel }
-
-            backendPanel
+        ZStack {
+            map.ignoresSafeArea(edges: .top)
+            VStack(spacing: 8) {
+                topBar
+                if !results.isEmpty { resultsList }
+                Spacer()
+                bottomStack
+            }
+            .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 8)
         }
-        .onAppear { if on { camera = .region(.init(center: pin, latitudinalMeters: 6000, longitudinalMeters: 6000)) } }
+        .background(Color.black)
+        .onAppear {
+            if on { camera = .region(.init(center: pin, latitudinalMeters: 6000, longitudinalMeters: 6000)) }
+        }
+        .onChange(of: trip.position?.latitude) { _, _ in
+            if follow, trip.running, let p = trip.position {
+                camera = .camera(MapCamera(centerCoordinate: p, distance: trip.mode == .walk ? 800 : 3000))
+            }
+        }
     }
 
     // MARK: map
@@ -85,228 +80,307 @@ struct GPSView: View {
         MapReader { proxy in
             Map(position: $camera) {
                 if !trip.route.isEmpty {
-                    MapPolyline(coordinates: trip.route).stroke(Theme.acid.opacity(0.8), lineWidth: 4)
+                    MapPolyline(coordinates: trip.route).stroke(Theme.acid, lineWidth: 4)
                 }
                 ForEach(Array(trip.waypoints.enumerated()), id: \.element.id) { i, w in
-                    Annotation(w.name, coordinate: w.coord) {
+                    Annotation("", coordinate: w.coord) {
                         Text("\(i + 1)").font(Theme.mono(11, .bold)).foregroundStyle(.black)
                             .frame(width: 22, height: 22).background(Circle().fill(Theme.acid))
+                            .overlay(Circle().stroke(.black, lineWidth: 1))
                     }
                 }
                 ForEach(pois.items, id: \.self) { m in
                     Annotation("", coordinate: m.placemark.coordinate) {
-                        Button { picked = m } label: {
+                        Button { pick(m) } label: {
                             Image(systemName: POISearch.isHotel(m) ? "bed.double.fill" : "music.note")
-                                .font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                                .frame(width: 24, height: 24)
+                                .font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                                .frame(width: 22, height: 22)
                                 .background(Circle().fill(POISearch.isHotel(m) ? Color.blue : Color.pink))
+                                .overlay(Circle().stroke(.white, lineWidth: 1))
                         }
                     }
                 }
+                if let c = candidate {
+                    Marker(c.name, systemImage: "mappin", coordinate: c.coord).tint(.white)
+                }
                 if trip.running || trip.done > 0, let p = trip.position {
                     Annotation("", coordinate: p) {
-                        Image(systemName: trip.mode.icon).font(.system(size: 14, weight: .bold))
+                        Image(systemName: trip.mode.icon).font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.black).frame(width: 30, height: 30)
-                            .background(Circle().fill(Theme.acid))
+                            .background(Circle().fill(Theme.acid)).overlay(Circle().stroke(.black, lineWidth: 1))
                     }
                 } else if on {
-                    Marker(name.isEmpty ? "here" : name, coordinate: pin).tint(Theme.acid)
+                    Annotation("", coordinate: pin) {
+                        Circle().fill(Theme.acid).frame(width: 18, height: 18)
+                            .overlay(Circle().stroke(.white, lineWidth: 3)).shadow(radius: 4)
+                    }
                 }
             }
-            .mapStyle(.standard(pointsOfInterest: .excludingAll))
-            .frame(height: 340)
-            .overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
+            .mapStyle(.hybrid(elevation: .realistic, pointsOfInterest: .excludingAll))
+            .mapControls { MapCompass(); MapScaleView() }
             .onMapCameraChange(frequency: .onEnd) { ctx in
                 visible = ctx.region
                 pois.refresh(ctx.region)
             }
             .onTapGesture { pt in
+                searchFocused = false; results = []
                 guard let c = proxy.convert(pt, from: .local) else { return }
-                picked = nil
-                if tool == "trip" { trip.add(c, name: "Point \(trip.waypoints.count + 1)") }
-                else { teleport(c, named: "Pin") }
+                candidate = Candidate(coord: c, name: "Dropped pin",
+                                      detail: String(format: "%.4f, %.4f", c.latitude, c.longitude))
             }
         }
     }
 
-    private var searchBar: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                TextField("search a place, hotel, club…", text: $query)
-                    .font(Theme.mono(13)).textInputAutocapitalization(.never).autocorrectionDisabled()
-                    .onSubmit { search() }
-                Toggle(isOn: $pois.showHotels) { Image(systemName: "bed.double.fill") }
-                    .toggleStyle(.button).tint(.blue)
-                Toggle(isOn: $pois.showClubs) { Image(systemName: "music.note") }
-                    .toggleStyle(.button).tint(.pink)
+    // MARK: top: search + layer toggles
+
+    private var topBar: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: searching ? "hourglass" : "magnifyingglass").foregroundStyle(.secondary)
+                TextField("Tokyo, North Korea, a hotel…", text: $query)
+                    .font(.system(size: 15)).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .submitLabel(.go).focused($searchFocused)
+                    .onSubmit { search(go: true) }
+                    .onChange(of: query) { _, q in if q.count >= 3 { search(go: false) } else { results = [] } }
+                if !query.isEmpty {
+                    Button { query = ""; results = [] } label: { Image(systemName: "xmark.circle.fill") }
+                        .foregroundStyle(.secondary)
+                }
             }
-            .padding(10).background(Theme.panel).overlay(Rectangle().stroke(Theme.line, lineWidth: 1))
-            .onChange(of: pois.showHotels) { _, _ in if let v = visible { pois.refresh(v) } }
-            .onChange(of: pois.showClubs) { _, _ in if let v = visible { pois.refresh(v) } }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(.ultraThinMaterial, in: Capsule())
+
+            chip("bed.double.fill", on: pois.showHotels, tint: .blue) { pois.showHotels.toggle(); refreshPOIs() }
+            chip("music.note", on: pois.showClubs, tint: .pink) { pois.showClubs.toggle(); refreshPOIs() }
+        }
+    }
+
+    private var resultsList: some View {
+        VStack(spacing: 0) {
             ForEach(results, id: \.self) { m in
-                Button {
-                    results = []; query = ""; picked = m
-                    camera = .region(.init(center: m.placemark.coordinate, latitudinalMeters: 3000, longitudinalMeters: 3000))
-                } label: {
+                Button { go(m, region: nil) } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(m.name ?? "?").font(Theme.mono(12, .bold)).foregroundStyle(.white)
-                        Text(m.placemark.title ?? "").font(Theme.mono(10)).foregroundStyle(Theme.dim).lineLimit(1)
-                    }.frame(maxWidth: .infinity, alignment: .leading)
+                        Text(m.name ?? "?").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        Text(m.placemark.title ?? "").font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 14).padding(.vertical, 9)
                 }
+                Divider().opacity(0.3)
             }
         }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private func poiCard(_ m: MKMapItem) -> some View {
-        Panel {
-            HStack {
-                Image(systemName: POISearch.isHotel(m) ? "bed.double.fill" : m.pointOfInterestCategory == .nightlife ? "music.note" : "mappin")
-                    .foregroundStyle(Theme.acid)
-                Text(m.name ?? "place").font(Theme.mono(13, .bold))
-                Spacer()
-                Button { picked = nil } label: { Image(systemName: "xmark") }.foregroundStyle(Theme.dim)
-            }
-            if let a = m.placemark.title { Text(a).font(Theme.mono(10)).foregroundStyle(Theme.dim).lineLimit(2) }
+    // MARK: bottom: status, pin actions, trip bar
+
+    private var bottomStack: some View {
+        VStack(spacing: 8) {
             HStack(spacing: 8) {
-                bigButton("go here now") { teleport(m.placemark.coordinate, named: m.name ?? "Place"); picked = nil }
-                bigButton("add to trip") {
-                    tool = "trip"; trip.add(m.placemark.coordinate, name: m.name ?? "Stop"); picked = nil
+                statusPill
+                Spacer()
+                if trip.running || trip.done > 0 {
+                    round(follow ? "location.fill" : "location", tint: follow ? Theme.acid : .white) { follow.toggle() }
                 }
             }
+            if let c = candidate { pinCard(c) }
+            if !trip.waypoints.isEmpty { tripBar }
         }
     }
 
-    // MARK: teleport
+    private var statusPill: some View {
+        HStack(spacing: 8) {
+            Circle().fill(device.live ? Theme.acid : Color.gray).frame(width: 8, height: 8)
+            Text(statusText).font(.system(size: 12, weight: .medium)).lineLimit(1)
+            if on || trip.running {
+                Button { stopAll() } label: { Text("Stop").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.acid) }
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(.ultraThinMaterial, in: Capsule())
+    }
 
-    private var teleportPanel: some View {
+    private var statusText: String {
+        if !OnDeviceGPS.hasPairing { return "not paired — run gm pairphone once" }
+        if trip.running { return "\(trip.mode.label)ing · \(Int(trip.speed * 3.6)) km/h" }
+        if on, device.live { return name.isEmpty ? "faking location" : name }
+        return device.live ? "faking location" : (device.status == "idle" ? "real location" : device.status)
+    }
+
+    private func pinCard(_ c: Candidate) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(on ? "at \(fmt(lat)), \(fmt(lon)) — tap the map to jump" : "tap the map to jump there")
-                .font(Theme.mono(11)).foregroundStyle(Theme.dim)
-            let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-            LazyVGrid(columns: cols, spacing: 8) {
-                ForEach(GPS_PLACES) { p in
-                    Button(p.name) { teleport(.init(latitude: p.lat, longitude: p.lon), named: p.name) }
-                        .font(Theme.mono(11, .bold)).frame(maxWidth: .infinity).padding(.vertical, 9)
-                        .background(on && name == p.name ? Theme.acid : Theme.line)
-                        .foregroundStyle(on && name == p.name ? .black : .white)
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(c.name).font(.system(size: 15, weight: .semibold)).lineLimit(1)
+                    if let d = c.detail { Text(d).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
+                }
+                Spacer()
+                Button { candidate = nil } label: { Image(systemName: "xmark").font(.system(size: 13, weight: .bold)) }
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
+                action("Teleport", "bolt.fill", filled: true) { teleport(c.coord, named: c.name); candidate = nil }
+                action(trip.waypoints.isEmpty ? "Start trip here" : "Add stop", "plus") {
+                    trip.add(c.coord, name: c.name); candidate = nil
                 }
             }
-            if on { bigButton("stop faking — real location", outline: true) { stopAll() } }
         }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    // MARK: trip
-
-    private var tripPanel: some View {
-        Panel {
-            Text("TRIP").font(Theme.mono(11)).foregroundStyle(Theme.dim)
-            Picker("", selection: $trip.mode) {
-                ForEach(TravelMode.allCases) { m in Label(m.label, systemImage: m.icon).tag(m) }
-            }.pickerStyle(.segmented).disabled(trip.running)
-
-            if trip.waypoints.isEmpty {
-                Text("Tap the map, a hotel/club, or a search result to add waypoints. Drive follows real roads, walk follows footpaths, boat finds a real path through rivers, bays and sea. The route draws on the map before you start.")
-                    .font(Theme.mono(11)).foregroundStyle(Theme.dim)
+    private var tripBar: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                ForEach(TravelMode.allCases) { m in
+                    Button { trip.mode = m } label: {
+                        Image(systemName: m.icon).font(.system(size: 14, weight: .semibold))
+                            .frame(width: 38, height: 32)
+                            .background(trip.mode == m ? Theme.acid : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 9))
+                            .foregroundStyle(trip.mode == m ? .black : .white)
+                    }.disabled(trip.running)
+                }
+                Menu {
+                    ForEach([1.0, 2.0, 5.0, 20.0], id: \.self) { s in
+                        Button("\(Int(s))× speed") { trip.timeScale = s }
+                    }
+                } label: {
+                    Text("\(Int(trip.timeScale))×").font(.system(size: 13, weight: .bold))
+                        .frame(width: 38, height: 32).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 9))
+                        .foregroundStyle(.white)
+                }
+                Spacer()
+                Button { showStops.toggle() } label: {
+                    Text("\(trip.waypoints.count) stop\(trip.waypoints.count == 1 ? "" : "s")")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                    Image(systemName: showStops ? "chevron.down" : "chevron.up").font(.system(size: 10)).foregroundStyle(.secondary)
+                }
+                Button { trip.clearAll(); showStops = false } label: { Image(systemName: "trash").font(.system(size: 14)) }
+                    .foregroundStyle(.secondary).padding(.leading, 4)
             }
-            ForEach(Array(trip.waypoints.enumerated()), id: \.element.id) { i, w in
-                HStack {
-                    Text("\(i + 1)").font(Theme.mono(11, .bold)).foregroundStyle(.black)
-                        .frame(width: 20, height: 20).background(Circle().fill(Theme.acid))
-                    Text(w.name).font(Theme.mono(12)).lineLimit(1)
-                    Spacer()
-                    if !trip.running {
-                        Button { trip.remove(w) } label: { Image(systemName: "minus.circle") }.foregroundStyle(Theme.dim)
+
+            if showStops {
+                ForEach(Array(trip.waypoints.enumerated()), id: \.element.id) { i, w in
+                    HStack {
+                        Text("\(i + 1)").font(.system(size: 11, weight: .bold)).foregroundStyle(.black)
+                            .frame(width: 18, height: 18).background(Circle().fill(Theme.acid))
+                        Text(w.name).font(.system(size: 13)).lineLimit(1)
+                        Spacer()
+                        if !trip.running {
+                            Button { trip.remove(w) } label: { Image(systemName: "minus.circle") }.foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
 
-            HStack {
-                Text("TIME").font(Theme.mono(11)).foregroundStyle(Theme.dim)
-                Picker("", selection: $trip.timeScale) {
-                    Text("1×").tag(1.0); Text("2×").tag(2.0); Text("5×").tag(5.0); Text("20×").tag(20.0)
-                }.pickerStyle(.segmented)
-            }
-            Text("1× = real-life speed (most realistic; apps that check travel speed won't flag it).")
-                .font(Theme.mono(10)).foregroundStyle(Theme.dim)
-
             if trip.total > 0 {
-                ProgressView(value: trip.done, total: trip.total).tint(Theme.acid)
-                Text(String(format: "%.2f / %.2f km · %.0f km/h · ~%@ left",
-                            trip.done / 1000, trip.total / 1000, trip.speed * 3.6, eta(trip.etaSeconds)))
-                    .font(Theme.mono(11)).foregroundStyle(Theme.acid)
+                ProgressView(value: min(trip.done, trip.total), total: trip.total).tint(Theme.acid)
+                Text(String(format: "%.1f / %.1f km · ~%@ left", trip.done / 1000, trip.total / 1000, eta(trip.etaSeconds)))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            } else if !trip.message.isEmpty || trip.waypoints.count < 2 {
+                Text(trip.waypoints.count < 2 ? "Tap the map or a place to add a destination" : trip.message)
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
             }
-            if !trip.message.isEmpty { Text(trip.message).font(Theme.mono(11)).foregroundStyle(Theme.dim) }
 
-            HStack(spacing: 8) {
+            if trip.waypoints.count >= 2 {
                 if trip.running {
-                    bigButton("pause") { trip.pause() }
+                    action("Pause", "pause.fill", filled: true) { trip.pause() }
                 } else {
-                    bigButton(trip.planning ? "planning…" : trip.done > 0 && trip.done < trip.total ? "resume" : "start trip") {
+                    action(trip.planning ? "Planning route…" : trip.done > 0 && trip.done < trip.total ? "Resume" : "Go",
+                           "play.fill", filled: true) {
                         Task {
                             await trip.start()
-                            if let first = trip.route.first, trip.done == 0 {
-                                camera = .region(.init(center: first, latitudinalMeters: 4000, longitudinalMeters: 4000))
-                            }
+                            follow = true
                         }
-                    }.disabled(trip.waypoints.count < 2 || trip.planning)
+                    }
+                    .disabled(trip.planning)
                 }
-                bigButton("clear", outline: true) { trip.clearAll() }
             }
-            if on && !trip.running { bigButton("stop faking — real location", outline: true) { stopAll() } }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    // MARK: small controls
+
+    private func chip(_ icon: String, on: Bool, tint: Color, _ act: @escaping () -> Void) -> some View {
+        Button(action: act) {
+            Image(systemName: icon).font(.system(size: 14, weight: .semibold))
+                .frame(width: 40, height: 40)
+                .background(on ? AnyShapeStyle(tint) : AnyShapeStyle(.ultraThinMaterial), in: Circle())
+                .foregroundStyle(.white)
         }
     }
 
-    // MARK: backend
+    private func round(_ icon: String, tint: Color, _ act: @escaping () -> Void) -> some View {
+        Button(action: act) {
+            Image(systemName: icon).font(.system(size: 15, weight: .semibold)).foregroundStyle(tint)
+                .frame(width: 40, height: 40).background(.ultraThinMaterial, in: Circle())
+        }
+    }
 
-    private var backendPanel: some View {
-        Panel {
-            HStack(spacing: 6) {
-                Circle().fill(device.live ? Theme.acid : Theme.dim).frame(width: 8, height: 8)
-                Text(device.status).font(Theme.mono(11)).foregroundStyle(device.live ? Theme.acid : Theme.dim)
-            }
-            Text(OnDeviceGPS.hasPairing
-                 ? "Moves the real location for every app, no computer needed. Keep LocalDevVPN connected + Wi-Fi on. Leave GODMODE in the background — swiping it away snaps you back."
-                 : "Not paired yet: plug into the Mac once and run `gm pairphone`, and install LocalDevVPN from the App Store.")
-                .font(Theme.mono(11)).foregroundStyle(Theme.dim)
+    private func action(_ t: String, _ icon: String, filled: Bool = false, _ act: @escaping () -> Void) -> some View {
+        Button(action: act) {
+            Label(t, systemImage: icon).font(.system(size: 14, weight: .semibold))
+                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                .background(filled ? AnyShapeStyle(Theme.acid) : AnyShapeStyle(Color.white.opacity(0.1)),
+                            in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(filled ? .black : .white)
         }
     }
 
     // MARK: actions
 
+    private func pick(_ m: MKMapItem) {
+        searchFocused = false
+        candidate = Candidate(coord: m.placemark.coordinate, name: m.name ?? "Place", detail: m.placemark.title)
+    }
+
     private func teleport(_ c: CLLocationCoordinate2D, named n: String) {
         if trip.running { trip.pause() }
         lat = c.latitude; lon = c.longitude; name = n; on = true
-        camera = .region(.init(center: c, latitudinalMeters: 6000, longitudinalMeters: 6000))
         Spoofer.shared.move(c, name: n)
     }
 
     private func stopAll() {
-        trip.stop(); on = false
+        trip.pause(); on = false
         Spoofer.shared.stop()
     }
 
-    private func search() {
+    /// Jump to a search result: move the map there and teleport straight away.
+    private func go(_ m: MKMapItem, region: MKCoordinateRegion?) {
+        results = []; searchFocused = false
+        query = ""
+        let c = m.placemark.coordinate
+        camera = .region(region ?? .init(center: c, latitudinalMeters: 5000, longitudinalMeters: 5000))
+        teleport(c, named: m.name ?? "Place")
+    }
+
+    private func search(go jump: Bool) {
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { results = []; return }
         let req = MKLocalSearch.Request()
         req.naturalLanguageQuery = q
-        if let v = visible { req.region = v }
-        Task { results = Array(((try? await MKLocalSearch(request: req).start().mapItems) ?? []).prefix(6)) }
-    }
-
-    private func bigButton(_ t: String, outline: Bool = false, _ act: @escaping () -> Void) -> some View {
-        Button(action: act) {
-            Text(t).font(Theme.mono(13, .bold)).padding(.vertical, 10).frame(maxWidth: .infinity)
-                .background(outline ? Theme.panel : Theme.acid)
-                .overlay(Rectangle().stroke(Theme.acid, lineWidth: 1))
-                .foregroundStyle(outline ? Theme.acid : .black)
+        req.resultTypes = [.address, .pointOfInterest]
+        searching = true
+        Task {
+            let resp = try? await MKLocalSearch(request: req).start()
+            searching = false
+            guard query.trimmingCharacters(in: .whitespaces) == q else { return }   // stale
+            let items = Array((resp?.mapItems ?? []).prefix(6))
+            if jump, let first = items.first {
+                // a country/city search gets a region that frames the whole place
+                let single = items.count == 1 ? resp?.boundingRegion : nil
+                go(first, region: single)
+            } else {
+                results = items
+            }
         }
     }
+
+    private func refreshPOIs() { if let v = visible { pois.refresh(v) } }
 
     private func eta(_ s: Double) -> String {
         let m = Int(s / 60)
         return m >= 60 ? "\(m / 60)h \(m % 60)m" : "\(max(m, 1))m"
     }
-
-    private func fmt(_ d: Double) -> String { String(format: "%.4f", d) }
 }

@@ -12,9 +12,7 @@ targets:
   GodMode:
     type: application
     platform: iOS
-    sources: [GodMode, Shared]
-    dependencies:
-      - target: GodModeWidget
+    sources: [GodMode]
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.orionjones.godmode
       GENERATE_INFOPLIST_FILE: YES
@@ -22,14 +20,4 @@ targets:
       INFOPLIST_KEY_UILaunchScreen_Generation: YES
       INFOPLIST_KEY_UIUserInterfaceStyle: Dark
       INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-      INFOPLIST_KEY_NSSupportsLiveActivities: YES
-      INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: GODMODE spoofs your location for sites in the Edit tab.
-  GodModeWidget:
-    type: app-extension
-    platform: iOS
-    sources: [Widget, Shared]
-    settings:
-      PRODUCT_BUNDLE_IDENTIFIER: com.orionjones.godmode.widget
-      GENERATE_INFOPLIST_FILE: NO
-      INFOPLIST_FILE: Widget/Info.plist
-      SKIP_INSTALL: YES
+      INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: GODMODE uses your location only to center the map.

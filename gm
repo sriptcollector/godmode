@@ -19,7 +19,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from gmlib import config, device, gps, ideas, patch  # noqa: E402
+from gmlib import config, device, gps, gpsd, ideas, patch  # noqa: E402
 from gmlib.device import DeviceError, run  # noqa: E402
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -133,6 +133,10 @@ def cmd_gps(a):
         print(f"✓ location set to {lat}, {lon} (holds until `gm gps off` or you unplug)")
 
 
+def cmd_gpsd(a):
+    gpsd.serve()
+
+
 def cmd_ideas(a):
     print(ideas.render(a.tag))
 
@@ -154,6 +158,7 @@ def main():
     s = sub.add_parser("remove"); s.add_argument("target"); s.set_defaults(fn=cmd_remove)
     sub.add_parser("companion").set_defaults(fn=cmd_companion)
     s = sub.add_parser("gps"); s.add_argument("where", help="sf/la/nyc/london/tokyo/paris/vegas/miami, \"lat,lon\", or off"); s.set_defaults(fn=cmd_gps)
+    sub.add_parser("gpsd", help="run the LAN daemon so the phone's map drives the whole-phone spoof").set_defaults(fn=cmd_gpsd)
     s = sub.add_parser("ideas"); s.add_argument("tag", nargs="?"); s.set_defaults(fn=cmd_ideas)
     a = p.parse_args()
     try:

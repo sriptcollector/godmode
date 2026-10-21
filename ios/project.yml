@@ -13,11 +13,17 @@ targets:
     type: application
     platform: iOS
     sources: [GodMode]
+    info:
+      path: GodMode/Info.plist
+      properties:
+        CFBundleDisplayName: GODMODE
+        UILaunchScreen: {}
+        UIUserInterfaceStyle: Dark
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSLocationWhenInUseUsageDescription: GODMODE uses your location only to center the map.
+        NSLocalNetworkUsageDescription: GODMODE talks to the gm gpsd helper on your Mac to move your phone's location.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.orionjones.godmode
-      GENERATE_INFOPLIST_FILE: YES
-      INFOPLIST_KEY_CFBundleDisplayName: GODMODE
-      INFOPLIST_KEY_UILaunchScreen_Generation: YES
-      INFOPLIST_KEY_UIUserInterfaceStyle: Dark
-      INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-      INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: GODMODE uses your location only to center the map.
+      GENERATE_INFOPLIST_FILE: NO

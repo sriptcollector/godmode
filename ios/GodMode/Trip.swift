@@ -112,9 +112,18 @@ final class TripEngine: ObservableObject {
     func remove(_ w: Waypoint) { waypoints.removeAll { $0 == w }; invalidate() }
     func clearAll() { stop(); waypoints = []; invalidate() }
 
+    private var previewTask: Task<Void, Never>?
     private func invalidate() {
         if running { stop() }
         route = []; cum = []; limit = []; cruiseAt = []; total = 0; done = 0
+        // draw the real route on the map as soon as there are two points
+        previewTask?.cancel()
+        guard waypoints.count >= 2 else { return }
+        previewTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard let self, !Task.isCancelled, !self.running else { return }
+            await self.plan()
+        }
     }
 
     // MARK: planning
@@ -132,7 +141,12 @@ final class TripEngine: ObservableObject {
             var legCruise = mode.cruise
             switch mode {
             case .boat:
-                leg = densify([a, b], step: 150)
+                if let water = await WaterRouter.route(a, b) {
+                    leg = densify(water, step: 120)
+                } else {
+                    message = "no water path for leg \(i + 1) — going straight"
+                    leg = densify([a, b], step: 150)
+                }
             case .walk, .drive:
                 let req = MKDirections.Request()
                 req.source = MKMapItem(placemark: MKPlacemark(coordinate: a))
@@ -185,6 +199,7 @@ final class TripEngine: ObservableObject {
     // MARK: playback
 
     func start() async {
+        previewTask?.cancel()
         if route.isEmpty { await plan() }
         guard !route.isEmpty else { return }
         if done >= total { done = 0; speed = 0 }

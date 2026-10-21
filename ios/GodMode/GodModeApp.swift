@@ -24,8 +24,27 @@ struct GodModeApp: App {
             RootView()
                 .preferredColorScheme(.dark)
                 .tint(Theme.acid)
-                .onAppear { UISpeed.apply(speed) }
+                .onAppear { UISpeed.apply(speed); LaunchArgs.run() }
                 .onChange(of: speed) { _, new in UISpeed.apply(new) }
+        }
+    }
+}
+
+/// `devicectl device process launch … com.orionjones.godmode --spoof 39.03,125.76` (or `--unspoof`)
+/// drives the standalone spoof without touching the screen — used by `gm` and for testing.
+enum LaunchArgs {
+    @MainActor static func run() {
+        let a = ProcessInfo.processInfo.arguments
+        if let i = a.firstIndex(of: "--spoof"), i + 1 < a.count {
+            let p = a[i + 1].split(separator: ",").compactMap { Double($0) }
+            guard p.count == 2 else { return }
+            UserDefaults.standard.set("phone", forKey: "gm.gps.mode")
+            UserDefaults.standard.set(true, forKey: "gm.geo.on")
+            UserDefaults.standard.set("Remote", forKey: "gm.geo.name")
+            Spoofer.shared.move(.init(latitude: p[0], longitude: p[1]), name: "Remote")
+        } else if a.contains("--unspoof") {
+            UserDefaults.standard.set(false, forKey: "gm.geo.on")
+            Spoofer.shared.stop()
         }
     }
 }

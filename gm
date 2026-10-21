@@ -139,14 +139,13 @@ def cmd_gpsd(a):
 
 def cmd_pairphone(a):
     """One-time pairing so the GODMODE app can spoof GPS standalone (no Mac afterwards)."""
-    tool = os.path.expanduser("~/.godmode/bin/pair_host")
+    tool = os.path.expanduser("~/.godmode/bin/idevice-tools")
     if not os.path.exists(tool):
-        raise DeviceError("pair_host missing — build it from ~/.godmode/src/idevice (cargo build -p idevice-tools --bin pair_host)")
+        raise DeviceError("idevice-tools missing — build it from ~/.godmode/src/idevice (cargo build -p idevice-tools)")
     out = os.path.expanduser("~/.godmode/pairing.plist")
     if not a.reuse or not os.path.exists(out):
-        print("• On the iPhone: Settings → Privacy & Security → Developer Mode → pair with \"GODMODE\",")
-        print("  then type the code printed below. (Mac + phone on the same Wi-Fi.)")
-        run([tool, "--name", "GODMODE", "--out", out], capture=False)
+        print("• pairing over USB (no prompt on the phone)…")
+        run([tool, "remotepairing_lockdown", "pair", "GODMODE", out])
     d = device.pick(a.device)["identifier"]
     print("• copying pairing file into GODMODE…")
     run(["xcrun", "devicectl", "device", "copy", "to", "--device", d, "--domain-type", "appDataContainer",

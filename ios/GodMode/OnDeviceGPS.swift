@@ -14,7 +14,12 @@ import IDeviceFFI
 final class OnDeviceGPS: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = OnDeviceGPS()
 
-    @Published private(set) var status = "idle"
+    @Published private(set) var status = "idle" {
+        didSet {   // also mirrored to Documents/gps_status.txt so `gm` can read it over USB
+            let url = OnDeviceGPS.pairingURL.deletingLastPathComponent().appendingPathComponent("gps_status.txt")
+            try? "\(Date()) live=\(live) \(status)\n".write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
     @Published private(set) var live = false
 
     private let q = DispatchQueue(label: "gm.ondevice.gps")

@@ -221,7 +221,7 @@ struct GPSView: View {
             }.pickerStyle(.segmented).disabled(trip.running)
 
             if trip.waypoints.isEmpty {
-                Text("Tap the map, a hotel/club, or a search result to add waypoints. Boat goes in straight lines over water; walk + drive follow real streets.")
+                Text("Tap the map, a hotel/club, or a search result to add waypoints. Drive follows real roads, walk follows footpaths, boat finds a real path through rivers, bays and sea. The route draws on the map before you start.")
                     .font(Theme.mono(11)).foregroundStyle(Theme.dim)
             }
             ForEach(Array(trip.waypoints.enumerated()), id: \.element.id) { i, w in

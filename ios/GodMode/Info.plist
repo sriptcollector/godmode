@@ -28,7 +28,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>GODMODE talks to the gm gpsd helper on your Mac to move your phone's location.</string>
+	<string>GODMODE talks to your phone's own location service through LocalDevVPN.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GODMODE keeps a location session open so your fake location keeps holding in the background.</string>
 	<key>UIBackgroundModes</key>

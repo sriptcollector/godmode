@@ -3,53 +3,22 @@ import MapKit
 
 // Travel simulation: pick real waypoints, choose walk / drive / boat, and the fake location moves
 // along the route at a believable pace (real road/footpath geometry from Apple Maps, acceleration,
-// braking into corners, stops at each waypoint). Every tick goes through Spoofer, so it drives
-// either the standalone on-phone link or the Mac relay — whichever the GPS tab is set to.
+// braking into corners, stops at each waypoint). Every tick goes through Spoofer → OnDeviceGPS.
 
-// MARK: - Spoofer: one place that moves the fake location, whatever the backend
+// MARK: - Spoofer: one place that moves the fake location
 
 @MainActor
-final class Spoofer: ObservableObject {
+final class Spoofer {
     static let shared = Spoofer()
-    @Published var relayStatus = ""
-    private let d = UserDefaults.standard
-
-    private var mode: String { d.string(forKey: "gm.gps.mode") ?? "phone" }
 
     func move(_ c: CLLocationCoordinate2D, name: String) {
         GeoSpoof.set(c.latitude, c.longitude, name: name)
-        if mode == "phone" { OnDeviceGPS.shared.set(c.latitude, c.longitude) }
-        else if d.bool(forKey: "gm.gpsd.whole") { relay("/set", ["lat": c.latitude, "lon": c.longitude]) }
+        OnDeviceGPS.shared.set(c.latitude, c.longitude)
     }
 
     func stop() {
         GeoSpoof.off()
-        if mode == "phone" { OnDeviceGPS.shared.clear() }
-        else if d.bool(forKey: "gm.gpsd.whole") { relay("/off", [:]) }
-    }
-
-    private var relayBusy = false
-    private func relay(_ path: String, _ body: [String: Any]) {
-        let host = d.string(forKey: "gm.gpsd.host") ?? "", token = d.string(forKey: "gm.gpsd.token") ?? ""
-        guard !host.isEmpty, let url = URL(string: host + path + "?token=" + token) else {
-            relayStatus = "set the Mac host + token first"; return
-        }
-        if relayBusy && path == "/set" { return }   // trips tick every second; drop overlapping posts
-        relayBusy = true
-        var req = URLRequest(url: url); req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        req.timeoutInterval = 8
-        URLSession.shared.dataTask(with: req) { _, resp, err in
-            let ok = (resp as? HTTPURLResponse)?.statusCode == 200
-            Task { @MainActor in
-                let s = Spoofer.shared
-                s.relayBusy = false
-                if let err { s.relayStatus = "Mac unreachable: \(err.localizedDescription)" }
-                else if ok { s.relayStatus = path == "/off" ? "phone back to real GPS" : "phone moving via Mac" }
-                else { s.relayStatus = "Mac rejected it — check the token" }
-            }
-        }.resume()
+        OnDeviceGPS.shared.clear()
     }
 }
 

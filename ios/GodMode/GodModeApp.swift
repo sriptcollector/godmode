@@ -38,7 +38,6 @@ enum LaunchArgs {
         if let i = a.firstIndex(of: "--spoof"), i + 1 < a.count {
             let p = a[i + 1].split(separator: ",").compactMap { Double($0) }
             guard p.count == 2 else { return }
-            UserDefaults.standard.set("phone", forKey: "gm.gps.mode")
             UserDefaults.standard.set(true, forKey: "gm.geo.on")
             UserDefaults.standard.set("Remote", forKey: "gm.geo.name")
             Spoofer.shared.move(.init(latitude: p[0], longitude: p[1]), name: "Remote")

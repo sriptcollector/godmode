@@ -29,7 +29,7 @@ targets:
         UIBackgroundModes: [location]
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
-        NSLocalNetworkUsageDescription: GODMODE talks to the gm gpsd helper on your Mac to move your phone's location.
+        NSLocalNetworkUsageDescription: GODMODE talks to your phone's own location service through LocalDevVPN.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     settings:

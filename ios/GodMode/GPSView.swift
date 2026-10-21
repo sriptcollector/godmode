@@ -1,10 +1,9 @@
 import SwiftUI
 import MapKit
 
-// Pick any spot on a map and fake your location there.
-//   • Whole phone, standalone (default): OnDeviceGPS drives the phone's own developer location
-//     service through LocalDevVPN — no Mac needed after the one-time `gm pairphone`.
-//   • Whole phone via Mac (fallback): the pin is POSTed to `gm gpsd` on your Mac.
+// Pick any spot on a map (or plan a trip) and fake the whole phone's location there.
+// Standalone: OnDeviceGPS drives the phone's own developer location service through LocalDevVPN —
+// no Mac needed after the one-time `gm pairphone`.
 //   • Native patched apps report the pin on-device via their own GODMODE menu → Fake GPS.
 
 struct GPSPlace: Identifiable, Hashable {
@@ -47,12 +46,7 @@ struct GPSView: View {
     @AppStorage("gm.geo.name") private var name = ""
     @AppStorage("gm.geo.lat") private var lat = 37.7749
     @AppStorage("gm.geo.lon") private var lon = -122.4194
-    @AppStorage("gm.gpsd.host") private var host = ""
-    @AppStorage("gm.gpsd.token") private var token = ""
-    @AppStorage("gm.gpsd.whole") private var wholePhone = false
-    @AppStorage("gm.gps.mode") private var mode = "phone"   // "phone" = standalone, "mac" = gpsd relay
     @ObservedObject private var device = OnDeviceGPS.shared
-    @ObservedObject private var spoofer = Spoofer.shared
     @ObservedObject private var trip = TripEngine.shared
     @StateObject private var pois = POISearch()
     @State private var tool = "teleport"                      // "teleport" | "trip"
@@ -60,7 +54,6 @@ struct GPSView: View {
     @State private var picked: MKMapItem?
     @State private var query = ""
     @State private var results: [MKMapItem] = []
-    @State private var showSetup = false
     @State private var visible: MKCoordinateRegion?
 
     private var pin: CLLocationCoordinate2D { .init(latitude: lat, longitude: lon) }
@@ -84,15 +77,6 @@ struct GPSView: View {
             backendPanel
         }
         .onAppear { if on { camera = .region(.init(center: pin, latitudinalMeters: 6000, longitudinalMeters: 6000)) } }
-        .alert("Mac helper", isPresented: $showSetup) {
-            TextField("host e.g. http://192.168.1.103:8777", text: $host)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-            TextField("token", text: $token).textInputAutocapitalization(.never).autocorrectionDisabled()
-            Button("save") {}
-            Button("cancel", role: .cancel) {}
-        } message: {
-            Text("Run `gm gpsd` on your Mac; it prints the host and token.")
-        }
     }
 
     // MARK: map
@@ -276,28 +260,14 @@ struct GPSView: View {
 
     private var backendPanel: some View {
         Panel {
-            Text("WHOLE PHONE").font(Theme.mono(11)).foregroundStyle(Theme.dim)
-            Picker("", selection: $mode) {
-                Text("on-phone (no Mac)").tag("phone")
-                Text("via Mac").tag("mac")
-            }.pickerStyle(.segmented)
-            if mode == "phone" {
-                HStack(spacing: 6) {
-                    Circle().fill(device.live ? Theme.acid : Theme.dim).frame(width: 8, height: 8)
-                    Text(device.status).font(Theme.mono(11)).foregroundStyle(device.live ? Theme.acid : Theme.dim)
-                }
-                Text(OnDeviceGPS.hasPairing
-                     ? "Moves the real location for every app. Keep LocalDevVPN connected + Wi-Fi on. Leave GODMODE in the background — swiping it away snaps you back."
-                     : "Not paired yet: run `gm pairphone` on the Mac once, and install LocalDevVPN from the App Store.")
-                    .font(Theme.mono(11)).foregroundStyle(Theme.dim)
-            } else {
-                Toggle(isOn: $wholePhone) { Text("send to `gm gpsd` on Mac").font(Theme.mono(11)) }.tint(Theme.acid)
-                Button(host.isEmpty ? "set Mac host + token" : "Mac: \(host)") { showSetup = true }
-                    .font(Theme.mono(11)).foregroundStyle(Theme.acid)
-                if !spoofer.relayStatus.isEmpty {
-                    Text(spoofer.relayStatus).font(Theme.mono(11)).foregroundStyle(Theme.dim)
-                }
+            HStack(spacing: 6) {
+                Circle().fill(device.live ? Theme.acid : Theme.dim).frame(width: 8, height: 8)
+                Text(device.status).font(Theme.mono(11)).foregroundStyle(device.live ? Theme.acid : Theme.dim)
             }
+            Text(OnDeviceGPS.hasPairing
+                 ? "Moves the real location for every app, no computer needed. Keep LocalDevVPN connected + Wi-Fi on. Leave GODMODE in the background — swiping it away snaps you back."
+                 : "Not paired yet: plug into the Mac once and run `gm pairphone`, and install LocalDevVPN from the App Store.")
+                .font(Theme.mono(11)).foregroundStyle(Theme.dim)
         }
     }
 

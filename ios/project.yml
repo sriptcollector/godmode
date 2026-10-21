@@ -23,7 +23,7 @@ targets:
       INFOPLIST_KEY_UIUserInterfaceStyle: Dark
       INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
       INFOPLIST_KEY_NSSupportsLiveActivities: YES
-      CODE_SIGN_ENTITLEMENTS: GodMode/GodMode.entitlements
+      INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: GODMODE spoofs your location for sites in the Edit tab.
   GodModeWidget:
     type: app-extension
     platform: iOS

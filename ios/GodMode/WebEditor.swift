@@ -262,7 +262,8 @@ struct WebContainer: UIViewRepresentable {
         func pushRules(editing: Bool) {
             let selectors = parent.store.selectors(parent.site.id)
             let css = parent.store.presetCSS(parent.site)
-            let data: [String: Any] = ["selectors": selectors, "css": css, "edit": editing]
+            var data: [String: Any] = ["selectors": selectors, "css": css, "edit": editing]
+            if let (lat, lon) = GeoSpoof.coord { data["geo"] = [lat, lon] }
             guard let json = try? JSONSerialization.data(withJSONObject: data),
                   let s = String(data: json, encoding: .utf8) else { return }
             web?.evaluateJavaScript("window.__gmApply(\(s));", completionHandler: nil)
@@ -286,7 +287,30 @@ struct WebContainer: UIViewRepresentable {
         styleEl().textContent = rules + "\n" + (state.css || "");
         document.documentElement.classList.toggle("gm-editing", !!state.edit);
       }
-      window.__gmApply = function (s) { state = s; apply(); };
+      window.__gmApply = function (s) { state = s; window.__gmGeo = s.geo || null; apply(); };
+
+      // GPS spoof: when a fake coord is set, hand it to any site that asks navigator.geolocation.
+      try {
+        var geo = navigator.geolocation;
+        if (geo && !geo.__gmWrapped) {
+          var realGet = geo.getCurrentPosition && geo.getCurrentPosition.bind(geo);
+          var realWatch = geo.watchPosition && geo.watchPosition.bind(geo);
+          function fakePos() {
+            var g = window.__gmGeo;
+            return { coords: { latitude: g[0], longitude: g[1], accuracy: 20, altitude: 12,
+              altitudeAccuracy: 5, heading: null, speed: null }, timestamp: Date.now() };
+          }
+          geo.getCurrentPosition = function (ok, err, opts) {
+            if (window.__gmGeo) { try { ok(fakePos()); } catch (e) {} return; }
+            return realGet ? realGet(ok, err, opts) : undefined;
+          };
+          geo.watchPosition = function (ok, err, opts) {
+            if (window.__gmGeo) { try { ok(fakePos()); } catch (e) {} return 0; }
+            return realWatch ? realWatch(ok, err, opts) : 0;
+          };
+          geo.__gmWrapped = true;
+        }
+      } catch (e) {}
 
       // Build a stable-ish CSS selector for a tapped element.
       function selectorFor(el) {

@@ -12,6 +12,7 @@
 // The Mac can still push Documents/godmode.json {"speed": 2} via `gm speed`.
 
 #import <UIKit/UIKit.h>
+#import <CoreLocation/CoreLocation.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <dlfcn.h>
@@ -22,6 +23,10 @@ static NSString *const kSpeed = @"gm.speed";
 static NSString *const kRules = @"gm.rules";
 static NSString *const kLimit = @"gm.limitMinutes";
 static NSString *const kUsagePrefix = @"gm.usage.";
+static NSString *const kGPSOn  = @"gm.gps.on";
+static NSString *const kGPSLat = @"gm.gps.lat";
+static NSString *const kGPSLon = @"gm.gps.lon";
+static NSString *const kGPSName = @"gm.gps.name";
 
 static NSUserDefaults *D(void) { return NSUserDefaults.standardUserDefaults; }
 
@@ -399,6 +404,88 @@ static UIView *Deepest(UIView *v, CGPoint p, UIView *skip) {
 - (void)done { [self removeFromSuperview]; }
 @end
 
+#pragma mark - fake GPS (standalone, per app, no computer)
+//
+// Swizzle CLLocationManager so *this app alone* reports a location you pick from the on-phone menu.
+// Only works when the app already has location permission (we don't ask on its behalf). This is NOT
+// system-wide — it changes what this one patched app sees, which is the most you can do no-jailbreak
+// without the cable. Pick a city in the GODMODE menu → "Fake GPS".
+
+// city name -> {lat, lon}; mirrors gmlib/gps.py PLACES
+static NSDictionary<NSString *, NSArray<NSNumber *> *> *GPSPlaces(void) {
+    return @{ @"San Francisco": @[@37.7749, @(-122.4194)], @"Los Angeles": @[@34.0522, @(-118.2437)],
+              @"New York": @[@40.7128, @(-74.0060)], @"London": @[@51.5074, @(-0.1278)],
+              @"Tokyo": @[@35.6762, @139.6503], @"Paris": @[@48.8566, @2.3522],
+              @"Las Vegas": @[@36.1699, @(-115.1398)], @"Miami": @[@25.7617, @(-80.1918)] };
+}
+
+static BOOL GPSOn(void) { return [D() boolForKey:kGPSOn]; }
+
+static CLLocation *FakeLocation(void) {
+    CLLocationCoordinate2D c = CLLocationCoordinate2DMake([D() doubleForKey:kGPSLat], [D() doubleForKey:kGPSLon]);
+    return [[CLLocation alloc] initWithCoordinate:c altitude:12
+                                horizontalAccuracy:5 verticalAccuracy:5
+                                            course:0 speed:0 timestamp:NSDate.date];
+}
+
+static NSHashTable *gGPSManagers;  // weak set of managers that are "updating", so we keep feeding them
+
+static void GMDeliver(CLLocationManager *mgr) {
+    if (!GPSOn() || !mgr) return;
+    id<CLLocationManagerDelegate> del = mgr.delegate;
+    if ([del respondsToSelector:@selector(locationManager:didUpdateLocations:)])
+        [del locationManager:mgr didUpdateLocations:@[FakeLocation()]];
+}
+
+static void FeedGPSManagers(void) {
+    if (!GPSOn()) return;
+    for (CLLocationManager *mgr in gGPSManagers.allObjects) GMDeliver(mgr);
+}
+
+static void InstallGPSHooks(void) {
+    Class cls = CLLocationManager.class;
+    gGPSManagers = [NSHashTable weakObjectsHashTable];
+
+    // -location getter → hand back the fake coordinate
+    Method loc = class_getInstanceMethod(cls, @selector(location));
+    IMP locOrig = method_getImplementation(loc);
+    method_setImplementation(loc, imp_implementationWithBlock(^CLLocation *(id self_) {
+        if (GPSOn()) return FakeLocation();
+        return ((CLLocation *(*)(id, SEL))locOrig)(self_, @selector(location));
+    }));
+
+    // -startUpdatingLocation → let the real thing run, then start feeding fakes
+    Method start = class_getInstanceMethod(cls, @selector(startUpdatingLocation));
+    IMP startOrig = method_getImplementation(start);
+    method_setImplementation(start, imp_implementationWithBlock(^(id self_) {
+        ((void (*)(id, SEL))startOrig)(self_, @selector(startUpdatingLocation));
+        if (GPSOn()) {
+            [gGPSManagers addObject:self_];
+            CLLocationManager *mgr = self_;
+            dispatch_async(dispatch_get_main_queue(), ^{ GMDeliver(mgr); });
+        }
+    }));
+
+    // -stopUpdatingLocation → stop feeding this manager
+    Method stop = class_getInstanceMethod(cls, @selector(stopUpdatingLocation));
+    IMP stopOrig = method_getImplementation(stop);
+    method_setImplementation(stop, imp_implementationWithBlock(^(id self_) {
+        [gGPSManagers removeObject:self_];
+        ((void (*)(id, SEL))stopOrig)(self_, @selector(stopUpdatingLocation));
+    }));
+
+    // -requestLocation (one-shot) → deliver a single fake fix
+    Method req = class_getInstanceMethod(cls, @selector(requestLocation));
+    if (req) {
+        IMP reqOrig = method_getImplementation(req);
+        method_setImplementation(req, imp_implementationWithBlock(^(id self_) {
+            if (GPSOn()) { CLLocationManager *mgr = self_; dispatch_async(dispatch_get_main_queue(), ^{ GMDeliver(mgr); }); return; }
+            ((void (*)(id, SEL))reqOrig)(self_, @selector(requestLocation));
+        }));
+    }
+    GMLog(@"GPS hooks installed (spoof %@)", GPSOn() ? @"on" : @"off");
+}
+
 #pragma mark - menu
 
 @interface GMMenu : NSObject <UIGestureRecognizerDelegate>
@@ -444,6 +531,9 @@ static UIView *Deepest(UIView *v, CGPoint p, UIView *skip) {
                                           style:UIAlertActionStyleDefault handler:^(id _) { [self speed]; }]];
     [a addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"⏳  Daily limit  ·  %@", limit ? [NSString stringWithFormat:@"%ld min", (long)limit] : @"off"]
                                           style:UIAlertActionStyleDefault handler:^(id _) { [self limit]; }]];
+    NSString *gpsName = GPSOn() ? ([D() stringForKey:kGPSName] ?: @"on") : @"off";
+    [a addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"📍  Fake GPS  ·  %@", gpsName]
+                                          style:UIAlertActionStyleDefault handler:^(id _) { [self gps]; }]];
     // FLEX ships as a framework inside the patched app; load it lazily so GodModeKit needn't link it.
     if (NSClassFromString(@"FLEXManager")) {
         [a addAction:[UIAlertAction actionWithTitle:@"🔎  Inspector (FLEX)" style:UIAlertActionStyleDefault handler:^(id _) {
@@ -494,6 +584,32 @@ static UIView *Deepest(UIView *v, CGPoint p, UIView *skip) {
             UpdateTimesUp();
         }]];
     }
+    [a addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [self present:a];
+}
+
+- (void)gps {
+    UIAlertController *a = [UIAlertController alertControllerWithTitle:@"Fake GPS"
+        message:@"this app alone will report the picked location (it needs location permission already). Not system-wide."
+        preferredStyle:UIAlertControllerStyleActionSheet];
+    NSDictionary *places = GPSPlaces();
+    NSString *current = [D() stringForKey:kGPSName];
+    for (NSString *name in [places.allKeys sortedArrayUsingSelector:@selector(compare:)]) {
+        BOOL on = GPSOn() && [current isEqualToString:name];
+        [a addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@%@", name, on ? @"  ✓" : @""]
+                                              style:UIAlertActionStyleDefault handler:^(id _) {
+            NSArray<NSNumber *> *ll = places[name];
+            [D() setDouble:ll[0].doubleValue forKey:kGPSLat];
+            [D() setDouble:ll[1].doubleValue forKey:kGPSLon];
+            [D() setObject:name forKey:kGPSName];
+            [D() setBool:YES forKey:kGPSOn];
+            FeedGPSManagers();
+        }]];
+    }
+    [a addAction:[UIAlertAction actionWithTitle:GPSOn() ? @"turn OFF (use real location)" : @"off"
+                                          style:UIAlertActionStyleDestructive handler:^(id _) {
+        [D() setBool:NO forKey:kGPSOn];
+    }]];
     [a addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
     [self present:a];
 }
@@ -556,6 +672,7 @@ static void SeedDefaults(void) {
 __attribute__((constructor)) static void GMInit(void) {
     FixAppGroups();
     SeedDefaults();
+    InstallGPSHooks();
     gHookedRows = [NSMutableSet set];
     LoadRules();
     // Load the bundled FLEX inspector if it shipped with the app, so its menu item lights up.
@@ -589,7 +706,7 @@ __attribute__((constructor)) static void GMInit(void) {
             [D() setDouble:[D() doubleForKey:TodayKey()] + (now - last) forKey:TodayKey()];
             ApplyRules();
             static int n = 0;
-            if (++n % 4 == 0) { ApplySpeed(); UpdateTimesUp(); }
+            if (++n % 4 == 0) { ApplySpeed(); UpdateTimesUp(); FeedGPSManagers(); }
         }
         last = now;
     }];

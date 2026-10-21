@@ -45,7 +45,7 @@ struct RootView: View {
     var body: some View {
         TabView {
             WebEditorView().tabItem { Label("Edit", systemImage: "scissors") }
-            ControlView().tabItem { Label("Control", systemImage: "hand.raised.square") }
+            GPSView().tabItem { Label("GPS", systemImage: "location") }
             DeviceView().tabItem { Label("Device", systemImage: "cpu") }
             AIView().tabItem { Label("AI", systemImage: "sparkles") }
             IdeasView().tabItem { Label("More", systemImage: "ellipsis.circle") }

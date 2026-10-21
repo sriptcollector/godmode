@@ -50,6 +50,9 @@ injected user script (`window.__gmApply`) that the SwiftUI side feeds the hide-l
 
 Runs on the phone, no computer needed once installed:
 
+- **GPS** — pick a city and every site in the Edit tab reports it (we override `navigator.geolocation`
+  in the web view). For native apps, set it in that app's own GODMODE menu → Fake GPS. For the whole
+  phone at once, `gm gps <city>` over the cable.
 - **Device** — live thermal / battery / RAM / disk, plus a **Live Activity**: one tap pins thermal,
   battery and RAM to your Lock Screen and Dynamic Island, refreshed every few seconds.
 - **Speed** — scrub the app's own UI from 0.1x to 6x, and a button to toggle Reduce Motion system-wide.
@@ -93,6 +96,9 @@ Inside any patched app, **three-finger double-tap** or **two-finger hold (1s)** 
   *Hidden items* lists every rule so you can bring any of them back.
 - **UI speed:** 0.25x to 5x for every animation in that app, applied instantly.
 - **Daily limit:** after N minutes a day the app goes grayscale and runs at slow motion.
+- **Fake GPS:** pick a city and *this app alone* reports that location — GodModeKit swizzles
+  `CLLocationManager` on the phone, no computer. Only works if the app already has location
+  permission, and it's per-app, not system-wide (that still needs `gm gps` over the cable).
 
 GodModeKit also patches a common sideloading crash: re-signed apps lose their App Group entitlement,
 so it gives them a private folder instead (Reddit crashed on launch without this).

@@ -137,6 +137,23 @@ def cmd_gpsd(a):
     gpsd.serve()
 
 
+def cmd_pairphone(a):
+    """One-time pairing so the GODMODE app can spoof GPS standalone (no Mac afterwards)."""
+    tool = os.path.expanduser("~/.godmode/bin/pair_host")
+    if not os.path.exists(tool):
+        raise DeviceError("pair_host missing — build it from ~/.godmode/src/idevice (cargo build -p idevice-tools --bin pair_host)")
+    out = os.path.expanduser("~/.godmode/pairing.plist")
+    if not a.reuse or not os.path.exists(out):
+        print("• On the iPhone: Settings → Privacy & Security → Developer Mode → pair with \"GODMODE\",")
+        print("  then type the code printed below. (Mac + phone on the same Wi-Fi.)")
+        run([tool, "--name", "GODMODE", "--out", out], capture=False)
+    d = device.pick(a.device)["identifier"]
+    print("• copying pairing file into GODMODE…")
+    run(["xcrun", "devicectl", "device", "copy", "to", "--device", d, "--domain-type", "appDataContainer",
+         "--domain-identifier", COMPANION_BUNDLE, "--source", out, "--destination", "Documents/pairing.plist"])
+    print("✓ paired — the GPS tab now works with no Mac (keep LocalDevVPN connected)")
+
+
 def cmd_ideas(a):
     print(ideas.render(a.tag))
 
@@ -157,8 +174,10 @@ def main():
     s = sub.add_parser("launch"); s.add_argument("target"); s.set_defaults(fn=cmd_launch)
     s = sub.add_parser("remove"); s.add_argument("target"); s.set_defaults(fn=cmd_remove)
     sub.add_parser("companion").set_defaults(fn=cmd_companion)
-    s = sub.add_parser("gps"); s.add_argument("where", help="sf/la/nyc/london/tokyo/paris/vegas/miami, \"lat,lon\", or off"); s.set_defaults(fn=cmd_gps)
+    s = sub.add_parser("gps"); s.add_argument("where", help="sf/la/nyc/london/tokyo/paris/vegas/miami/pyongyang, \"lat,lon\", or off"); s.set_defaults(fn=cmd_gps)
     sub.add_parser("gpsd", help="run the LAN daemon so the phone's map drives the whole-phone spoof").set_defaults(fn=cmd_gpsd)
+    s = sub.add_parser("pairphone", help="one-time pairing for standalone on-phone GPS spoofing")
+    s.add_argument("--reuse", action="store_true", help="just re-copy the existing pairing file"); s.set_defaults(fn=cmd_pairphone)
     s = sub.add_parser("ideas"); s.add_argument("tag", nargs="?"); s.set_defaults(fn=cmd_ideas)
     a = p.parse_args()
     try:

@@ -13,6 +13,11 @@ targets:
     type: application
     platform: iOS
     sources: [GodMode]
+    dependencies:
+      - framework: Vendor/IDevice.xcframework
+        embed: false
+      - sdk: Security.framework
+      - sdk: SystemConfiguration.framework
     info:
       path: GodMode/Info.plist
       properties:
@@ -20,7 +25,10 @@ targets:
         UILaunchScreen: {}
         UIUserInterfaceStyle: Dark
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
-        NSLocationWhenInUseUsageDescription: GODMODE uses your location only to center the map.
+        NSLocationWhenInUseUsageDescription: GODMODE keeps a location session open so your fake location keeps holding in the background.
+        UIBackgroundModes: [location]
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
         NSLocalNetworkUsageDescription: GODMODE talks to the gm gpsd helper on your Mac to move your phone's location.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true

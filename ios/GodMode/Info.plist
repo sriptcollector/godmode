@@ -20,6 +20,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
@@ -28,7 +30,13 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>GODMODE talks to the gm gpsd helper on your Mac to move your phone's location.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>GODMODE uses your location only to center the map.</string>
+	<string>GODMODE keeps a location session open so your fake location keeps holding in the background.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

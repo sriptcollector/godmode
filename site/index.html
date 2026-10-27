@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GPS Spoofer</title>
-<meta name="description" content="Set your iPhone's location to anywhere in the world. No jailbreak. Free installer for Mac.">
+<meta name="description" content="Set your iPhone's location to anywhere in the world. No jailbreak. Install from your Mac with one line.">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2340f28c'/%3E%3Cstop offset='1' stop-color='%231a99e6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23g)'/%3E%3Cpath d='M47 17 17 30l13 4 4 13z' fill='%23000' fill-opacity='.85'/%3E%3C/svg%3E">
 <style>
@@ -37,6 +37,14 @@
     box-shadow: 0 10px 40px -10px rgba(64,242,140,.6); transition: transform .15s, box-shadow .15s; }
   .cta:hover { transform: translateY(-1px); box-shadow: 0 14px 50px -10px rgba(64,242,140,.75); }
   .cta svg { width: 20px; height: 20px; }
+  .hero > div { min-width: 0; }
+  .cmdbox { display: flex; align-items: center; gap: 10px; max-width: 560px; background: #000; border: 1px solid rgba(64,242,140,.45);
+    border-radius: 16px; padding: 8px 8px 8px 18px; box-shadow: 0 10px 50px -16px rgba(64,242,140,.55); }
+  .cmdbox code { flex: 1; min-width: 0; overflow-wrap: anywhere; font: 600 14px/1.45 ui-monospace, "SF Mono", Menlo, monospace; }
+  .cmdbox .cta { flex: none; padding: 12px 22px; font-size: 16px; border: 0; cursor: pointer; font-family: inherit; }
+  .how { color: var(--muted); font-size: 16px; max-width: 560px; margin: 16px 0 0; }
+  kbd { font: 600 13px -apple-system, sans-serif; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; }
   .fine { color: var(--muted); font-size: 14px; margin-top: 14px; }
   .notmac { display: none; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 15px; }
   .is-notmac .notmac { display: block; }
@@ -103,10 +111,11 @@
     <div>
       <h1>Be <span>anywhere.</span></h1>
       <p class="lede">Set your iPhone's location to any place on Earth. No jailbreak, no subscription.</p>
-      <a class="cta" id="dl" href="/GPS-Spoofer-Installer.zip" download>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0-5-5m5 5 5-5M5 20h14"/></svg>
-        Download for Mac
-      </a>
+      <div class="cmdbox">
+        <code>curl -fsSL godmode.orion-jones.com/app | bash</code>
+        <button type="button" class="cta copy" data-copy="curl -fsSL godmode.orion-jones.com/app | bash">Copy</button>
+      </div>
+      <p class="how">On your Mac, press <kbd>⌘</kbd> <kbd>Space</kbd>, type <b>Terminal</b> and press Return. Paste the line above and press Return. The installer opens and takes it from there.</p>
       <div class="fine">Free · macOS 13 or later · Apple silicon and Intel</div>
       <div class="notmac">The installer runs on a Mac. Open this page on your Mac, then plug in your iPhone.</div>
     </div>
@@ -131,7 +140,7 @@
   <div class="wrap">
     <h2>Three steps. About an hour, once.</h2>
     <div class="steps">
-      <div class="card"><h3>Download and open</h3><p>Unzip, then double-click <b>GPS Spoofer Installer</b> and press Install.</p></div>
+      <div class="card"><h3>Paste one line</h3><p>Copy the command above into Terminal on your Mac. The <b>GPS Spoofer Installer</b> opens; press Install.</p></div>
       <div class="card"><h3>Follow along</h3><p>Plug in your iPhone. The installer tells you exactly what to tap, and waits for you.</p></div>
       <div class="card"><h3>Teleport</h3><p>Open GPS Spoofer on your iPhone, tap anywhere on the map, then tap Teleport.</p></div>
     </div>
@@ -154,13 +163,8 @@
   <div class="wrap">
     <h2>Questions</h2>
     <details>
-      <summary>My Mac says it can't verify the app</summary>
-      <p>Apple shows this for apps downloaded outside the App Store. To open it anyway:</p>
-      <ol>
-        <li>Double-click the installer once and close the warning.</li>
-        <li>Open <b>System Settings › Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>.</li>
-        <li>Confirm with your password. You only do this once.</li>
-      </ol>
+      <summary>What does the command do?</summary>
+      <p>It downloads the GPS Spoofer Installer app from this site into your Applications folder and opens it. Nothing else runs until you press Install. All of the code is open on <a href="https://github.com/sriptcollector/godmode">GitHub</a>.</p>
     </details>
     <details>
       <summary>Why does it need Xcode?</summary>
@@ -175,9 +179,9 @@
       <p>No. Once it's set up, GPS Spoofer works on its own. Install the free <b>LocalDevVPN</b> app from the App Store and keep it connected while you use GPS Spoofer.</p>
     </details>
     <details>
-      <summary>I prefer Terminal</summary>
-      <p>The same installer, as a one-liner:</p>
-      <div class="term"><code id="cmd">curl -fsSL godmode.orion-jones.com | bash</code><button type="button" id="copy">Copy</button></div>
+      <summary>Install entirely in Terminal, without the app</summary>
+      <p>The same installer, run as text in Terminal:</p>
+      <div class="term"><code>curl -fsSL godmode.orion-jones.com | bash</code><button type="button" class="copy" data-copy="curl -fsSL godmode.orion-jones.com | bash">Copy</button></div>
     </details>
   </div>
 </section>
@@ -188,11 +192,11 @@
 
 <script>
   if (!/Macintosh|Mac OS X/.test(navigator.userAgent) || navigator.maxTouchPoints > 1) document.body.classList.add("is-notmac");
-  document.getElementById("copy").addEventListener("click", e => {
-    navigator.clipboard.writeText(document.getElementById("cmd").textContent).then(() => {
-      e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy", 1500);
+  document.querySelectorAll("button.copy").forEach(b => b.addEventListener("click", () => {
+    navigator.clipboard.writeText(b.dataset.copy).then(() => {
+      b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1500);
     });
-  });
+  }));
 </script>
 </body>
 </html>

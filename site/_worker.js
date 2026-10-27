@@ -14,6 +14,10 @@ export default {
   async fetch(req, env) {
     const { pathname } = new URL(req.url);
     const browser = (req.headers.get("accept") || "").includes("text/html");
+    if (pathname === "/app") {  // `curl … /app | bash`: fetch + open the installer app
+      const r = await env.ASSETS.fetch(new URL("/app.sh", req.url));
+      return new Response(await r.text(), { headers: HEADERS });
+    }
     // Browsers get the download page; `curl … | bash` (Accept: */*) gets the script.
     if ((pathname === "/" && browser) || (pathname !== "/" && pathname !== "/install.sh")) return env.ASSETS.fetch(req);
     let body;

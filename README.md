@@ -106,17 +106,35 @@ so it gives them a private folder instead (Reddit crashed on launch without this
 Recipes can preset an app's own tweak settings (`"defaults"` in `mods/*.json`). Instagram ships with
 Reels tab, ads, Meta AI and suggested posts/reels/accounts already off.
 
-## Setup (one time)
+## Install (one shot)
+
+Anyone with a Mac (Apple silicon or Intel) and an iPhone can install it. Plug in the iPhone, open
+Terminal, and paste:
 
 ```
-brew install xcodegen libimobiledevice
-pipx install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip   # provides `cyan`
+curl -fsSL godmode.orion-jones.com | bash
+# or from a checkout: ./install.sh
 ```
 
-`~/.godmode/config.json` (not committed) holds the team id and the App Store Connect API key used to sign:
+It installs Homebrew, xcodegen, libimobiledevice, pymobiledevice3 and Xcode (if missing). For signing
+it has you sign in to Xcode with your Apple ID. A **free Apple ID works**, but the app expires after 7 days
+(re-run to renew); a paid developer account lasts a year. It finds your team ID by itself and gives your
+apps their own bundle ids (`com.godmode.t<team>`), so nothing clashes with anyone else's. Then it pulls the prebuilt [idevice](https://github.com/jkcoxson/idevice) release (checksum-pinned)
+into `ios/Vendor/IDevice.xcframework` and `~/.godmode/bin`, and waits for Trust and Developer Mode.
+Then it runs `gm companion` and `gm pairphone`. Re-running it is safe, and it's also how you update.
+After that, on the phone: install **LocalDevVPN** (App Store, free), connect it, and open GODMODE.
+
+For `gm patch` you also need `cyan`:
+
+```
+pipx install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
+```
+
+`~/.godmode/config.json` (not committed) holds the team id, optionally a `bundle_prefix`, and an
+App Store Connect API key if you'd rather sign with that than an Xcode login:
 
 ```json
-{ "team": "482FP5Y9AN", "asc_key_path": "~/.appstoreconnect/private_keys/AuthKey_XXXX.p8",
+{ "team": "XXXXXXXXXX", "asc_key_path": "~/.appstoreconnect/private_keys/AuthKey_XXXX.p8",
   "asc_key_id": "XXXX", "asc_issuer_id": "…" }
 ```
 

@@ -23,7 +23,6 @@ from gmlib import config, device, gps, gpsd, ideas, patch  # noqa: E402
 from gmlib.device import DeviceError, run  # noqa: E402
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
-COMPANION_BUNDLE = "com.orionjones.godmode"
 
 
 def bundle_of(name):
@@ -41,7 +40,7 @@ def cmd_status(a):
     print(f"  udid           {hw.get('udid')}")
     print(f"  developer mode {dp.get('developerModeStatus')}")
     print(f"  ddi mounted    {dp.get('ddiServicesAvailable')}")
-    mine = [x for x in device.apps(d["identifier"]) if x.get("bundleIdentifier", "").startswith("com.orionjones.godmode")]
+    mine = [x for x in device.apps(d["identifier"]) if x.get("bundleIdentifier", "").startswith(config.bundle_prefix())]
     print(f"  godmode apps   {', '.join(x['bundleIdentifier'] for x in mine) or 'none yet'}")
 
 
@@ -68,7 +67,7 @@ def cmd_apps(a):
 def cmd_mods(a):
     for f in sorted(os.listdir(os.path.join(ROOT, "mods"))):
         if f.endswith(".json"):
-            m = json.load(open(os.path.join(ROOT, "mods", f)))
+            m = patch.load_mod(f[:-5])
             print(f"{f[:-5]:12} → {m['bundle_id']}")
             for t in m.get("tweaks", []):
                 print(f"   + {t['name']}: {t['what']}")
@@ -115,12 +114,13 @@ def cmd_companion(a):
     print("• building GODMODE…")
     run(["xcodebuild", "-project", os.path.join(ios, "GodMode.xcodeproj"), "-scheme", "GodMode",
          "-destination", f"id={dev['hardwareProperties']['udid']}", "-derivedDataPath", dd,
-         f"DEVELOPMENT_TEAM={config.team()}", *config.xcode_auth_args(), "build", "-quiet"])
+         f"DEVELOPMENT_TEAM={config.team()}", f"PRODUCT_BUNDLE_IDENTIFIER={config.bundle_prefix()}",
+         *config.xcode_auth_args(), "build", "-quiet"])
     app = os.path.join(dd, "Build", "Products", "Debug-iphoneos", "GodMode.app")
     d = dev["identifier"]
     print("• installing…")
     device.install(d, app)
-    device.launch(d, COMPANION_BUNDLE)
+    device.launch(d, config.bundle_prefix())
     print("✓ GODMODE is on your phone")
 
 
@@ -141,7 +141,7 @@ def cmd_pairphone(a):
     """One-time pairing so the GODMODE app can spoof GPS standalone (no Mac afterwards)."""
     tool = os.path.expanduser("~/.godmode/bin/idevice-tools")
     if not os.path.exists(tool):
-        raise DeviceError("idevice-tools missing — build it from ~/.godmode/src/idevice (cargo build -p idevice-tools)")
+        raise DeviceError("idevice-tools missing — re-run install.sh")
     out = os.path.expanduser("~/.godmode/pairing.plist")
     if not a.reuse or not os.path.exists(out):
         print("• pairing over USB (no prompt on the phone)…")
@@ -149,7 +149,7 @@ def cmd_pairphone(a):
     d = device.pick(a.device)["identifier"]
     print("• copying pairing file into GODMODE…")
     run(["xcrun", "devicectl", "device", "copy", "to", "--device", d, "--domain-type", "appDataContainer",
-         "--domain-identifier", COMPANION_BUNDLE, "--source", out, "--destination", "Documents/pairing.plist"])
+         "--domain-identifier", config.bundle_prefix(), "--source", out, "--destination", "Documents/pairing.plist"])
     print("✓ paired — the GPS tab now works with no Mac (keep LocalDevVPN connected)")
 
 

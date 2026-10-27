@@ -19,7 +19,9 @@ def load_mod(name):
         have = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, "mods")) if f.endswith(".json"))
         raise DeviceError(f"no mod recipe {name!r} (have: {', '.join(have)})")
     with open(path) as f:
-        return json.load(f)
+        mod = json.load(f)
+    mod["bundle_id"] = config.bundle_id(mod["bundle_id"])
+    return mod
 
 
 def fetch(url):

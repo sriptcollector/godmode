@@ -1,4 +1,4 @@
-"""Local, uncommitted settings in ~/.godmode/config.json (team id + App Store Connect API key)."""
+"""Local, uncommitted settings in ~/.godmode/config.json (team id, bundle prefix, App Store Connect API key)."""
 import json
 import os
 
@@ -13,8 +13,31 @@ def load():
         return {}
 
 
+OWNER_TEAM = "482FP5Y9AN"
+OWNER_PREFIX = "com.orionjones.godmode"
+
+
 def team():
-    return os.environ.get("GM_TEAM") or load().get("team") or "482FP5Y9AN"
+    t = os.environ.get("GM_TEAM") or load().get("team")
+    if not t:
+        from .device import DeviceError
+        raise DeviceError("no Apple team id — run install.sh, or put {\"team\": \"XXXXXXXXXX\"} in ~/.godmode/config.json")
+    return t
+
+
+def bundle_prefix():
+    """Bundle ids are unique across all Apple teams, so everyone else gets their own prefix."""
+    c = load()
+    if c.get("bundle_prefix"):
+        return c["bundle_prefix"]
+    return OWNER_PREFIX if team() == OWNER_TEAM else f"com.godmode.t{team().lower()}"
+
+
+def bundle_id(recipe_id):
+    """Map a recipe's com.orionjones.godmode[.app] id onto this user's prefix."""
+    if recipe_id == OWNER_PREFIX or recipe_id.startswith(OWNER_PREFIX + "."):
+        return bundle_prefix() + recipe_id[len(OWNER_PREFIX):]
+    return recipe_id
 
 
 def xcode_auth_args():

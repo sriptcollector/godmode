@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPS Spoofer</title>
+<meta name="description" content="Set your iPhone's location to anywhere in the world. No jailbreak. Free installer for Mac.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2340f28c'/%3E%3Cstop offset='1' stop-color='%231a99e6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23g)'/%3E%3Cpath d='M47 17 17 30l13 4 4 13z' fill='%23000' fill-opacity='.85'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #07090b; --panel: rgba(255,255,255,.05); --line: rgba(255,255,255,.09);
+    --text: #eef2f0; --muted: #93a09a; --accent: #40f28c; --accent2: #1a99e6;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  nav { display: flex; align-items: center; gap: 10px; padding: 22px 0; font-weight: 700; letter-spacing: .2px; }
+  .logo { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .logo svg { width: 55%; height: 55%; }
+  nav .gh { margin-left: auto; font-weight: 500; font-size: 15px; color: var(--muted); text-decoration: none; }
+  nav .gh:hover { color: var(--text); }
+
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; padding: 56px 0 80px; }
+  h1 { font-size: clamp(44px, 7vw, 76px); line-height: 1; letter-spacing: -2px; margin: 0 0 20px; font-weight: 800; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 20px; color: var(--muted); margin: 0 0 32px; max-width: 30ch; }
+  .cta { display: inline-flex; align-items: center; gap: 12px; background: var(--accent); color: #04140a;
+    text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px;
+    box-shadow: 0 10px 40px -10px rgba(64,242,140,.6); transition: transform .15s, box-shadow .15s; }
+  .cta:hover { transform: translateY(-1px); box-shadow: 0 14px 50px -10px rgba(64,242,140,.75); }
+  .cta svg { width: 20px; height: 20px; }
+  .fine { color: var(--muted); font-size: 14px; margin-top: 14px; }
+  .notmac { display: none; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 15px; }
+  .is-notmac .notmac { display: block; }
+
+  /* map card */
+  .map { position: relative; aspect-ratio: 4/5; border-radius: 28px; overflow: hidden; border: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 62% 42%, rgba(64,242,140,.18), transparent 38%),
+      linear-gradient(160deg, #0d1a1f, #0a1014);
+    box-shadow: 0 40px 120px -40px rgba(26,153,230,.45); }
+  .map svg.roads { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pin { position: absolute; left: 62%; top: 42%; transform: translate(-50%, -100%); }
+  .pin .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); border: 4px solid #07090b;
+    box-shadow: 0 0 0 0 rgba(64,242,140,.6); animation: pulse 2.2s infinite; margin: 0 auto; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(64,242,140,.55); } 80%,100% { box-shadow: 0 0 0 26px rgba(64,242,140,0); } }
+  .chip { position: absolute; left: 50%; transform: translateX(-50%); top: -54px; white-space: nowrap;
+    background: rgba(10,14,16,.85); backdrop-filter: blur(10px); border: 1px solid var(--line);
+    padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+  .teleport { position: absolute; left: 20px; right: 20px; bottom: 20px; padding: 16px; border-radius: 16px; text-align: center;
+    background: var(--accent); color: #04140a; font-weight: 700; }
+  @media (prefers-reduced-motion: reduce) { .pin .dot { animation: none; } }
+
+  section { padding: 72px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -1px; margin: 0 0 32px; line-height: 1.1; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: s; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+  .steps .card::before { counter-increment: s; content: counter(s); display: grid; place-items: center;
+    width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #04140a; font-weight: 800; margin-bottom: 16px; }
+  .card h3 { margin: 0 0 6px; font-size: 19px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .needs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 32px; padding: 0; margin: 0; list-style: none; }
+  .needs li { display: flex; gap: 12px; align-items: baseline; }
+  .needs li::before { content: "✓"; color: var(--accent); font-weight: 800; }
+  details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+  summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 22px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p, details ol { color: var(--muted); margin: 12px 0 0; }
+  details ol { padding-left: 20px; }
+  .term { display: flex; align-items: center; gap: 12px; background: #000; border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 12px 12px 16px; font: 14px/1.4 ui-monospace, "SF Mono", Menlo, monospace; margin-top: 12px; }
+  .term code { flex: 1; overflow-x: auto; white-space: nowrap; color: var(--text); }
+  .term button { flex: none; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 12px; font: 600 13px -apple-system, sans-serif; cursor: pointer; }
+  footer { padding: 40px 0 60px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; padding-top: 24px; gap: 40px; }
+    .map { aspect-ratio: 5/4; }
+    .steps, .needs { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l7.5 3 3 7.5z" fill="#000" fill-opacity=".85"/></svg></div>
+    GPS Spoofer
+    <a class="gh" href="https://github.com/sriptcollector/godmode">GitHub</a>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <h1>Be <span>anywhere.</span></h1>
+      <p class="lede">Set your iPhone's location to any place on Earth. No jailbreak, no subscription.</p>
+      <a class="cta" id="dl" href="/GPS-Spoofer-Installer.zip" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0-5-5m5 5 5-5M5 20h14"/></svg>
+        Download for Mac
+      </a>
+      <div class="fine">Free · macOS 13 or later · Apple silicon and Intel</div>
+      <div class="notmac">The installer runs on a Mac. Open this page on your Mac, then plug in your iPhone.</div>
+    </div>
+    <div class="map" aria-hidden="true">
+      <svg class="roads" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round">
+        <g stroke="rgba(255,255,255,.07)" stroke-width="10">
+          <path d="M-20 120 C 120 140, 220 60, 420 90"/><path d="M-20 330 C 100 300, 260 380, 420 320"/>
+          <path d="M90 -20 C 110 160, 60 300, 120 520"/><path d="M300 -20 C 260 140, 330 300, 280 520"/>
+        </g>
+        <g stroke="rgba(255,255,255,.045)" stroke-width="4">
+          <path d="M-20 220 L 420 200"/><path d="M-20 420 L 420 440"/><path d="M200 -20 L 190 520"/>
+          <path d="M20 -20 L 40 520"/><path d="M370 -20 L 380 520"/><path d="M-20 40 L 420 20"/>
+        </g>
+      </svg>
+      <div class="pin"><div class="chip">Shibuya, Tokyo</div><div class="dot"></div></div>
+      <div class="teleport">Teleport</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>Three steps. About an hour, once.</h2>
+    <div class="steps">
+      <div class="card"><h3>Download and open</h3><p>Unzip, then double-click <b>GPS Spoofer Installer</b> and press Install.</p></div>
+      <div class="card"><h3>Follow along</h3><p>Plug in your iPhone. The installer tells you exactly what to tap, and waits for you.</p></div>
+      <div class="card"><h3>Teleport</h3><p>Open GPS Spoofer on your iPhone, tap anywhere on the map, then tap Teleport.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What you need</h2>
+    <ul class="needs">
+      <li>A Mac (macOS 13 or later)</li>
+      <li>Your iPhone and its cable</li>
+      <li>An Apple ID (a free one works)</li>
+      <li>About 40 GB free on the Mac for Apple's Xcode</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Questions</h2>
+    <details>
+      <summary>My Mac says it can't verify the app</summary>
+      <p>Apple shows this for apps downloaded outside the App Store. To open it anyway:</p>
+      <ol>
+        <li>Double-click the installer once and close the warning.</li>
+        <li>Open <b>System Settings › Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>.</li>
+        <li>Confirm with your password. You only do this once.</li>
+      </ol>
+    </details>
+    <details>
+      <summary>Why does it need Xcode?</summary>
+      <p>Xcode is Apple's free tool for putting apps on your own iPhone. The installer uses it to build GPS Spoofer and sign it with your Apple ID, so no jailbreak is needed. It's a large download, which is most of the hour.</p>
+    </details>
+    <details>
+      <summary>Does it work with a free Apple ID?</summary>
+      <p>Yes. Apple makes apps signed with a free Apple ID stop opening after 7 days. When that happens, plug in your iPhone and open the installer again; it renews in a couple of minutes. A paid Apple Developer account makes it last a year.</p>
+    </details>
+    <details>
+      <summary>Do I need my Mac after installing?</summary>
+      <p>No. Once it's set up, GPS Spoofer works on its own. Install the free <b>LocalDevVPN</b> app from the App Store and keep it connected while you use GPS Spoofer.</p>
+    </details>
+    <details>
+      <summary>I prefer Terminal</summary>
+      <p>The same installer, as a one-liner:</p>
+      <div class="term"><code id="cmd">curl -fsSL godmode.orion-jones.com | bash</code><button type="button" id="copy">Copy</button></div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">GPS Spoofer is open source. Use it on your own devices and respect the rules of the apps you use.</div>
+</footer>
+
+<script>
+  if (!/Macintosh|Mac OS X/.test(navigator.userAgent) || navigator.maxTouchPoints > 1) document.body.classList.add("is-notmac");
+  document.getElementById("copy").addEventListener("click", e => {
+    navigator.clipboard.writeText(document.getElementById("cmd").textContent).then(() => {
+      e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy", 1500);
+    });
+  });
+</script>
+</body>
+</html>

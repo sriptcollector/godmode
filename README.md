@@ -108,8 +108,10 @@ Reels tab, ads, Meta AI and suggested posts/reels/accounts already off.
 
 ## Install (one shot)
 
-Anyone with a Mac (Apple silicon or Intel) and an iPhone can install it. Plug in the iPhone, open
-Terminal, and paste:
+Anyone with a Mac (Apple silicon or Intel) and an iPhone can install it. Consumers: go to
+**godmode.orion-jones.com**, click **Download for Mac**, and open **GPS Spoofer Installer** (the app in
+`installer/`, built with `installer/build.sh`; the site lives in `site/`, deployed with `site/deploy.sh`).
+It walks through every step below with one button. From Terminal instead, plug in the iPhone and paste:
 
 ```
 curl -fsSL godmode.orion-jones.com | bash

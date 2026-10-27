@@ -1,4 +1,5 @@
-// godmode.orion-jones.com: serves install.sh straight from GitHub main, so the one-liner never goes stale.
+// godmode.orion-jones.com: the GPS Spoofer download page for browsers, and install.sh for curl, served
+// straight from GitHub main so the one-liner never goes stale.
 // Falls back to the copy bundled at deploy time if GitHub is unreachable.
 const RAW = "https://raw.githubusercontent.com/sriptcollector/godmode/main/install.sh";
 const HEADERS = {
@@ -12,7 +13,9 @@ const HEADERS = {
 export default {
   async fetch(req, env) {
     const { pathname } = new URL(req.url);
-    if (pathname !== "/" && pathname !== "/install.sh") return env.ASSETS.fetch(req);
+    const browser = (req.headers.get("accept") || "").includes("text/html");
+    // Browsers get the download page; `curl … | bash` (Accept: */*) gets the script.
+    if ((pathname === "/" && browser) || (pathname !== "/" && pathname !== "/install.sh")) return env.ASSETS.fetch(req);
     let body;
     try {
       const r = await fetch(RAW, { cf: { cacheTtl: 60 } });

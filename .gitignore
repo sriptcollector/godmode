@@ -7,3 +7,4 @@ __pycache__/
 # FLEX.framework is a build artifact committed on purpose (2.3MB)
 ios/Vendor/
 .buildsim/
+site/*.zip

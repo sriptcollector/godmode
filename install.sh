@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# GODMODE one-shot installer: Mac toolchain → GODMODE app on the plugged-in iPhone → standalone GPS pairing.
+# GPS Spoofer one-shot installer: Mac toolchain → GPS Spoofer app on the plugged-in iPhone → standalone GPS pairing.
 # Safe to re-run; every step skips itself when it's already done.
 #
 #   curl -fsSL godmode.orion-jones.com | bash
 #   ./install.sh                     from a checkout
+#   GM_UI=app                        driven by the GPS Spoofer Installer Mac app (see installer/): progress and
+#                                    prompts go to stdout as `::kind text` lines, answers come back on stdin
 set -euo pipefail
 
 REPO=sriptcollector/godmode
@@ -13,15 +15,45 @@ IDEVICE_TOOLS_ARM_SHA=fc4c2a74a3d2899bc33a7c2ed42d367e843b9dd6854bb3b1b257274b1c
 IDEVICE_TOOLS_INTEL_SHA=ba27ffd646a06ac411e185607343a8e8da437d1fa52a24a2d7c6411d4d8d1447
 STATE="$HOME/.godmode"
 
-say()  { printf '\n\033[1;36m▸ %s\033[0m\n' "$*"; }
-ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
-die()  { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
-wait_enter() { read -r -p "  $* — press Enter when done " _ </dev/tty; }
-ask()  { local a; read -r -p "  $1 " a </dev/tty; printf '%s' "$a"; }
+APP=; [ "${GM_UI:-}" = app ] && APP=1
+
+if [ -n "$APP" ]; then
+  say()  { local id="$1"; shift; printf '::step %s %s\n' "$id" "$*"; }
+  ok()   { printf '::ok %s\n' "$*"; }
+  die()  { printf '::fail %s\n' "$*"; exit 1; }
+  ask()  { local a; printf '::ask %s\t%s\n' "$1" "${2:-}" >&2; read -r a; printf '%s' "${a:-${2:-}}"; }
+  # wait_until <message> <command…>: show the message and re-check every few seconds (or right away when
+  # the app's Done button sends a line), so people never have to come back and confirm.
+  wait_until() {
+    local msg="$1"; shift
+    "$@" && return 0
+    printf '::wait %s\n' "$msg"
+    until "$@"; do read -r -t 4 _ || sleep 1; done
+    printf '::resume\n'
+  }
+  # sudo prompts become the standard macOS password dialog.
+  mkdir -p "$HOME/.godmode"
+  cat > "$HOME/.godmode/askpass" <<'ASK'
+#!/bin/sh
+exec osascript -e 'text returned of (display dialog "GPS Spoofer needs your Mac password to set up Apple’s developer tools." default answer "" with hidden answer with title "GPS Spoofer Installer" with icon caution)'
+ASK
+  chmod +x "$HOME/.godmode/askpass"
+  export SUDO_ASKPASS="$HOME/.godmode/askpass" NONINTERACTIVE=1
+  sudo() { command sudo -A "$@"; }
+else
+  say()  { shift; printf '\n\033[1;36m▸ %s\033[0m\n' "$*"; }
+  ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+  die()  { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+  ask()  { local a; read -r -p "  $1${2:+ [$2]} " a </dev/tty; printf '%s' "${a:-${2:-}}"; }
+  wait_until() {
+    local msg="$1"; shift
+    until "$@"; do read -r -p "  $msg — press Enter when done " _ </dev/tty; done
+  }
+fi
 
 # Everything runs inside main so a half-downloaded `curl | bash` never executes a partial script.
 main() {
-[ "$(uname -s)" = Darwin ] || die "GODMODE needs a Mac."
+[ "$(uname -s)" = Darwin ] || die "GPS Spoofer needs a Mac."
 if [ "$(uname -m)" = arm64 ]; then
   BREW_BIN=/opt/homebrew/bin/brew; TOOLS_ARCH=arm; TOOLS_SHA=$IDEVICE_TOOLS_ARM_SHA
 else
@@ -29,8 +61,9 @@ else
 fi
 
 # ── 1. Homebrew + CLI deps ──────────────────────────────────────────────────────────────────────
-say "Homebrew + tools"
+say tools "Homebrew + tools"
 if ! command -v brew >/dev/null; then
+  [ -z "$APP" ] || command sudo -A -v || die "GPS Spoofer needs an administrator account on this Mac."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 eval "$("$BREW_BIN" shellenv)"
@@ -43,7 +76,7 @@ command -v pymobiledevice3 >/dev/null || pipx install pymobiledevice3 || echo " 
 ok "xcodegen, libimobiledevice, pymobiledevice3"
 
 # ── 2. The repo ─────────────────────────────────────────────────────────────────────────────────
-say "GODMODE source"
+say source "GPS Spoofer source"
 SELF="${BASH_SOURCE[0]:-}"  # empty when piped from curl
 HERE="$( [ -f "$SELF" ] && cd "$(dirname "$SELF")" && pwd || true)"
 if [ -n "$HERE" ] && [ -x "$HERE/gm" ] && [ -d "$HERE/gmlib" ]; then
@@ -55,6 +88,7 @@ else
   else
     # Public repo: plain https clone. Private (owner only): fall back to an authenticated gh clone.
     GIT_TERMINAL_PROMPT=0 git clone -q "https://github.com/$REPO.git" "$ROOT" 2>/dev/null || {
+      [ -z "$APP" ] || die "Couldn't download GPS Spoofer from GitHub. Check your internet connection and try again."
       brew list --formula gh >/dev/null 2>&1 || brew install gh
       gh auth status >/dev/null 2>&1 || gh auth login --web --git-protocol https
       gh repo clone "$REPO" "$ROOT"
@@ -65,15 +99,19 @@ ln -sf "$ROOT/gm" "$(brew --prefix)/bin/gm"
 ok "$ROOT  (gm is on your PATH)"
 
 # ── 3. Xcode ────────────────────────────────────────────────────────────────────────────────────
-say "Xcode"
+say xcode "Xcode"
 find_xcode() { ls -d /Applications/Xcode*.app 2>/dev/null | sort | tail -1; }
-XCODE="$(find_xcode)"
-if [ -z "$XCODE" ]; then
-  brew list --formula mas >/dev/null 2>&1 || brew install mas
-  mas install 497799835 || { open "macappstore://apps.apple.com/app/id497799835"; wait_enter "Install Xcode from the App Store"; }
-  XCODE="$(find_xcode)"
-  [ -n "$XCODE" ] || die "Xcode still not in /Applications."
+have_xcode() { [ -n "$(find_xcode)" ] && [ -x "$(find_xcode)/Contents/Developer/usr/bin/xcodebuild" ]; }
+if ! have_xcode; then
+  if [ -z "$APP" ]; then
+    brew list --formula mas >/dev/null 2>&1 || brew install mas
+    mas install 497799835 || open "macappstore://apps.apple.com/app/id497799835"
+  else
+    open "macappstore://apps.apple.com/app/id497799835"
+  fi
+  wait_until "Get Xcode from the App Store (it just opened). It's free but big, so this is the slow part. Installation continues by itself once Xcode is installed." have_xcode
 fi
+XCODE="$(find_xcode)"
 case "$(xcode-select -p)" in
   "$XCODE"/*) ;;
   *) echo "  pointing xcode-select at $XCODE (sudo)"; sudo xcode-select -s "$XCODE/Contents/Developer" ;;
@@ -83,7 +121,7 @@ xcodebuild -checkFirstLaunchStatus >/dev/null 2>&1 || sudo xcodebuild -runFirstL
 ok "$XCODE"
 
 # ── 4. Signing ──────────────────────────────────────────────────────────────────────────────────
-say "Signing"
+say signing "Signing"
 mkdir -p "$STATE"
 # Team ids Xcode knows about: signed-in accounts first, then any Apple Development certs in the keychain.
 detect_teams() {
@@ -119,19 +157,25 @@ PY
 if [ -f "$STATE/config.json" ]; then
   ok "using $STATE/config.json"
 else
-  echo "  GODMODE is signed with your own Apple ID. A free Apple ID works (the app then needs"
-  echo "  re-installing every 7 days); a paid developer account lasts a year."
-  KEY="$(ask 'App Store Connect API key (.p8) path, or just Enter to sign in to Xcode instead:')"
-  if [ -z "$KEY" ] && [ -z "$(detect_teams)" ]; then
+  KEY=
+  if [ -z "$APP" ]; then
+    echo "  GPS Spoofer is signed with your own Apple ID. A free Apple ID works (the app then needs"
+    echo "  re-installing every 7 days); a paid developer account lasts a year."
+    KEY="$(ask 'App Store Connect API key (.p8) path, or just Enter to sign in to Xcode instead:')"
+  fi
+  has_team() { [ -n "$(detect_teams)" ]; }
+  if [ -z "$KEY" ] && ! has_team; then
     open -a "$XCODE"
-    until [ -n "$(detect_teams)" ]; do
-      wait_enter "In Xcode › Settings › Accounts, click + and sign in with your Apple ID"
-    done
+    wait_until "Sign in to Xcode with your Apple ID: in Xcode, open Settings › Accounts, click +, choose Apple ID and sign in. A free Apple ID is fine." has_team
   fi
   TEAMS="$(detect_teams)"
-  [ -z "$TEAMS" ] || { echo "  Teams found:"; printf '%s\n' "$TEAMS" | sed 's/^/    /'; }
   DEFAULT_TEAM="$(printf '%s\n' "$TEAMS" | head -1 | cut -f1)"
-  TEAM="$(ask "Team ID${DEFAULT_TEAM:+ [$DEFAULT_TEAM]}:")"; TEAM="${TEAM:-$DEFAULT_TEAM}"
+  if [ -n "$APP" ] && [ "$(printf '%s\n' "$TEAMS" | grep -c .)" = 1 ]; then
+    TEAM="$DEFAULT_TEAM"
+  else
+    [ -z "$TEAMS" ] || { echo "  Teams found:"; printf '%s\n' "$TEAMS" | sed 's/^/    /'; }
+    TEAM="$(ask "Which team ID should sign GPS Spoofer?" "$DEFAULT_TEAM")"
+  fi
   [[ "$TEAM" =~ ^[A-Z0-9]{10}$ ]] || die "a team ID is 10 letters/digits (developer.apple.com › Account › Membership)"
   if [ -n "$KEY" ]; then
     KEY="${KEY/#\~/$HOME}"
@@ -152,7 +196,7 @@ json.dump({"team": os.environ["TEAM"]}, open(os.path.expanduser("~/.godmode/conf
 fi
 
 # ── 5. idevice (prebuilt): the on-phone GPS library + the Mac pairing tool ───────────────────────
-say "idevice $IDEVICE_VER"
+say idevice "idevice $IDEVICE_VER"
 fetch() {  # fetch <asset> <sha256> <dest-dir>
   local zip="$STATE/dl/$1"
   mkdir -p "$STATE/dl"
@@ -186,7 +230,7 @@ fi
 ok "idevice-tools → ~/.godmode/bin"
 
 # ── 6. The phone ────────────────────────────────────────────────────────────────────────────────
-say "iPhone"
+say phone "iPhone"
 phone() { python3 - "$ROOT" "$1" <<'PY'
 import sys
 sys.path.insert(0, sys.argv[1])
@@ -201,29 +245,28 @@ else:
     print(d.get("deviceProperties", {}).get("name", "iPhone"))
 PY
 }
-until [ "$(phone name)" != none ]; do
-  wait_enter "Plug in the iPhone with a cable, unlock it, and tap Trust"
-done
+has_phone() { [ "$(phone name)" != none ]; }
+devmode_on() { [ "$(phone devmode)" = enabled ]; }
+wait_until "Plug your iPhone into this Mac with a cable, unlock it, and tap Trust if it asks." has_phone
 ok "$(phone name)"
-if [ "$(phone devmode)" != enabled ]; then
+if ! devmode_on; then
   gm devmode || true
-  until [ "$(phone devmode)" = enabled ]; do
-    wait_enter "On the phone: Settings › Privacy & Security › Developer Mode → On, restart, unlock, tap Turn On"
-  done
+  wait_until "Turn on Developer Mode on the iPhone: Settings › Privacy & Security › Developer Mode → On. It restarts; unlock it and tap Turn On." devmode_on
 fi
 ok "Developer Mode on"
 
-say "Building + installing the GODMODE app (first build takes a few minutes)"
+say build "Building + installing the GPS Spoofer app (first build takes a few minutes)"
 gm companion
 
-say "Pairing the app with the phone (one time, so GPS works with no Mac)"
+say pair "Pairing the app with the phone (one time, so GPS works with no Mac)"
 if [ -f "$STATE/pairing.plist" ]; then gm pairphone --reuse; else gm pairphone; fi
 
+[ -z "$APP" ] || { printf '::done\n'; return; }
 cat <<'EOF'
 
   ✓ Installed. Last step on the phone:
      1. App Store → install "LocalDevVPN" (free), open it, tap Connect
-     2. Open GODMODE → tap the map → Teleport
+     2. Open GPS Spoofer → tap the map → Teleport
 
   Keep LocalDevVPN connected while spoofing. To update later: re-run this installer.
   Signing expires after 7 days on a free Apple ID (a year on a paid one); re-run to renew.

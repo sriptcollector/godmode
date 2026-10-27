@@ -21,15 +21,15 @@ targets:
     info:
       path: GodMode/Info.plist
       properties:
-        CFBundleDisplayName: GODMODE
+        CFBundleDisplayName: GPS Spoofer
         UILaunchScreen: {}
         UIUserInterfaceStyle: Dark
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
-        NSLocationWhenInUseUsageDescription: GODMODE keeps a location session open so your fake location keeps holding in the background.
+        NSLocationWhenInUseUsageDescription: GPS Spoofer keeps a location session open so your fake location keeps holding in the background.
         UIBackgroundModes: [location]
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
-        NSLocalNetworkUsageDescription: GODMODE talks to your phone's own location service through LocalDevVPN.
+        NSLocalNetworkUsageDescription: GPS Spoofer talks to your phone's own location service through LocalDevVPN.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     settings:
